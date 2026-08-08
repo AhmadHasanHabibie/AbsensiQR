@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\AttendanceLock;
 use App\Models\SchoolClass;
+use App\Services\AcademicCalendarService;
 use App\Services\AttendanceTimeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -219,6 +220,9 @@ class ReportController extends Controller
         $printedAt  = now('Asia/Jakarta')->isoFormat('D MMMM YYYY, HH:mm:ss');
         $piketName  = Auth::user()->name ?? 'Guru Piket';
 
+        $dailyStatus  = AcademicCalendarService::getDailyStatus($dateStr);
+        $isSchoolDay  = $dailyStatus['is_school_day'] ?? true;
+
         $classes = SchoolClass::where('status', true)
             ->with(['teacher', 'students' => fn ($q) => $q->where('role', 'student')->where('status', true)->orderBy('name')])
             ->orderBy('name')
@@ -230,10 +234,10 @@ class ReportController extends Controller
 
         $hadirTotal = 0; $terlambatTotal = 0; $izinTotal = 0; $sakitTotal = 0; $alpaTotal = 0;
 
-        $classGroups = $classes->map(function ($cls) use ($attendances, &$hadirTotal, &$terlambatTotal, &$izinTotal, &$sakitTotal, &$alpaTotal) {
+        $classGroups = $classes->map(function ($cls) use ($attendances, $isSchoolDay, &$hadirTotal, &$terlambatTotal, &$izinTotal, &$sakitTotal, &$alpaTotal) {
             $hadir = 0; $terlambat = 0; $izin = 0; $sakit = 0; $alpa = 0;
 
-            $studentData = $cls->students->map(function ($std) use ($attendances, &$hadir, &$terlambat, &$izin, &$sakit, &$alpa) {
+            $studentData = $cls->students->map(function ($std) use ($attendances, $isSchoolDay, &$hadir, &$terlambat, &$izin, &$sakit, &$alpa) {
                 $attList = $attendances->get($std->id);
                 $att     = $attList ? $attList->first() : null;
 
@@ -252,7 +256,9 @@ class ReportController extends Controller
                         $a = 1; $alpa++;
                     }
                 } else {
-                    $a = 1; $alpa++;
+                    if ($isSchoolDay) {
+                        $a = 1; $alpa++;
+                    }
                 }
 
                 return [
