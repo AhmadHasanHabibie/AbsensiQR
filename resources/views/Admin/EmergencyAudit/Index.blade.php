@@ -90,14 +90,10 @@
         </div>
         <div class="card-body p-4">
             <form method="GET" action="{{ route('admin.emergency-audit.index') }}" class="row g-3">
-                {{-- Rentang Tanggal --}}
+                {{-- Tanggal --}}
                 <div class="col-12 col-sm-6 col-md-3">
-                    <label class="form-label fw-semibold small text-muted">Mulai Tanggal</label>
-                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                </div>
-                <div class="col-12 col-sm-6 col-md-3">
-                    <label class="form-label fw-semibold small text-muted">Sampai Tanggal</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                    <label class="form-label fw-semibold small text-muted">Tanggal Audit</label>
+                    <input type="date" name="date" class="form-control" value="{{ $selectedDate }}">
                 </div>
 
                 {{-- Kelas --}}

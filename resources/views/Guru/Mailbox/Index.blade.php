@@ -65,6 +65,16 @@
             <h5 class="mb-0 fw-semibold">
                 <i class="bi bi-envelope me-2"></i> Kotak Masuk Pesan Internal
             </h5>
+            <form method="GET" action="{{ route('guru.mailbox.index') }}" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+                @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+                @endif
+                <input type="date" name="date" class="form-control form-control-sm" value="{{ request('date') }}" style="width:160px;" title="Filter Berdasarkan Tanggal">
+                <button type="submit" class="btn btn-sm btn-light fw-semibold"><i class="bi bi-filter me-1"></i>Filter</button>
+                @if(request('date') || request('status'))
+                <a href="{{ route('guru.mailbox.index') }}" class="btn btn-sm btn-outline-light">Reset</a>
+                @endif
+            </form>
             <div class="d-flex gap-2">
                 <a href="{{ route('guru.mailbox.index') }}" class="btn btn-sm btn-light {{ !request('status') ? 'active fw-bold' : '' }}">Semua</a>
                 <a href="{{ route('guru.mailbox.index', ['status' => 'unread']) }}" class="btn btn-sm btn-light {{ request('status') === 'unread' ? 'active fw-bold' : '' }}">Belum Dibaca</a>

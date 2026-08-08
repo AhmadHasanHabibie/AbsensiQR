@@ -173,9 +173,10 @@ class AcademicCalendarService
     public function getStatsByYear(?string $year = null): array
     {
         $year = $year ?? AcademicCalendar::activeYear();
+        $todayInfo = static::getDailyStatus();
 
         if (! $year) {
-            return $this->emptyStats();
+            return array_merge($this->emptyStats(), ['today_info' => $todayInfo]);
         }
 
         $query = AcademicCalendar::byYear($year);
@@ -191,6 +192,7 @@ class AcademicCalendarService
             'school_days'   => $schoolDays,
             'holidays'      => $holidays,
             'today'         => $today,
+            'today_info'    => $todayInfo,
             'has_data'      => $total > 0,
         ];
     }
@@ -206,6 +208,7 @@ class AcademicCalendarService
             'school_days'   => 0,
             'holidays'      => 0,
             'today'         => null,
+            'today_info'    => static::getDailyStatus(),
             'has_data'      => false,
         ];
     }

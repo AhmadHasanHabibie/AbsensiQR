@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Services\AcademicCalendarService;
 use App\Services\AttendanceTimeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class ScanController extends Controller
      */
     public function index()
     {
+        $dailyStatus = AcademicCalendarService::getDailyStatus();
         $isScanOpen  = AttendanceTimeService::isAttendanceOpen();
         $isPastLimit = AttendanceTimeService::isAttendanceExpired();
         $currentTime = Carbon::now('Asia/Jakarta')->format('H:i:s');
@@ -28,7 +30,7 @@ class ScanController extends Controller
             ->take(10)
             ->get();
 
-        return view('Operator.Scan.Index', compact('isScanOpen', 'isPastLimit', 'currentTime', 'recentScans'));
+        return view('Operator.Scan.Index', compact('isScanOpen', 'isPastLimit', 'currentTime', 'recentScans', 'dailyStatus'));
     }
 
     /**
@@ -36,6 +38,18 @@ class ScanController extends Controller
      */
     public function store(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Maaf, sedang libur. Scan QR tidak dapat dilakukan hari ini.',
+            ], 403);
+        }
+
         if (! AttendanceTimeService::isAttendanceOpen()) {
             return response()->json([
                 'success' => false,

@@ -47,8 +47,11 @@ class EmergencyAuditController extends Controller
         $operators = User::where('role', 'operator')->where('status', true)->orderBy('name')->get();
         $teachers  = User::where('role', 'teacher')->where('status', true)->orderBy('name')->get();
 
+        $selectedDate = $request->input('date', today()->toDateString());
+
         return view('Admin.EmergencyAudit.Index', compact(
             'audits',
+            'selectedDate',
             'totalHariIni',
             'total7Hari',
             'total30Hari',
@@ -134,22 +137,16 @@ class EmergencyAuditController extends Controller
      */
     private function buildQuery(Request $request)
     {
+        $selectedDate = $request->input('date', today()->toDateString());
+
         $query = EmergencyAttendanceAudit::with([
             'student.schoolClass',
             'schoolClass',
             'operator',
             'teacher',
             'attendance',
-        ])->orderBy('input_at', 'desc');
-
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('input_at', [
-                Carbon::parse($request->start_date)->startOfDay(),
-                Carbon::parse($request->end_date)->endOfDay(),
-            ]);
-        } elseif ($request->filled('date')) {
-            $query->whereDate('input_at', $request->date);
-        }
+        ])->orderBy('input_at', 'desc')
+          ->whereDate('input_at', $selectedDate);
 
         if ($request->filled('class_id')) {
             $query->where('class_id', $request->class_id);

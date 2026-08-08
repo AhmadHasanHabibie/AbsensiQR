@@ -40,6 +40,31 @@
         </div>
         <div class="card-body p-4">
 
+            {{-- Search Bar --}}
+            <form action="{{ route('admin.guru-piket.index') }}" method="GET" class="mb-4">
+                <div class="row g-2">
+                    <div class="col-md-6 col-lg-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control border-start-0 ps-0"
+                                   value="{{ request('search') }}" placeholder="Cari Nama, NIP, atau Username Guru Piket...">
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                            <i class="bi bi-search me-1"></i> Cari
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <a href="{{ route('admin.guru-piket.index') }}" class="btn btn-outline-secondary w-100 fw-semibold">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                        </a>
+                    </div>
+                </div>
+            </form>
+
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
@@ -90,7 +115,13 @@
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bi bi-person-badge fs-1 d-block mb-2"></i>
-                                <p class="mb-0">Belum ada data Guru Piket.</p>
+                                <p class="mb-0">
+                                    @if(request('search'))
+                                        Tidak ada data yang cocok dengan pencarian "<strong>{{ request('search') }}</strong>".
+                                    @else
+                                        Belum ada data Guru Piket.
+                                    @endif
+                                </p>
                             </td>
                         </tr>
                     @endforelse

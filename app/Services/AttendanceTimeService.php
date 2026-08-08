@@ -9,7 +9,7 @@ class AttendanceTimeService
     /**
      * Jam Buka Absensi QR (WIB)
      */
-    public const OPEN_TIME = '06:00:00';
+    public const OPEN_TIME = '00:01:00';
 
     /**
      * Jam Tutup Absensi QR (WIB)
@@ -81,7 +81,7 @@ class AttendanceTimeService
         $timeStr = $now->format('H:i:s');
 
         if ($timeStr < self::OPEN_TIME) {
-            return 'Absensi QR belum dibuka. Pintu absensi dibuka pukul 06:00 WIB.';
+            return 'Absensi QR belum dibuka. Pintu absensi dibuka pukul 00:01 WIB.';
         }
 
         return 'Waktu absensi QR telah berakhir pukul 06.30 WIB.';
@@ -119,7 +119,7 @@ class AttendanceTimeService
             'current_time' => $timeStr,
             'open_time'    => self::OPEN_TIME,
             'close_time'   => self::CLOSE_TIME,
-            'label'        => $isOpen ? 'DIBUKA OTOMATIS (06:00 - 06:30 WIB)' : ($isPastLimit ? 'DITUTUP OTOMATIS (Pukul 06:31 WIB)' : 'BELUM DIBUKA (Pukul 06:00 WIB)'),
+            'label'        => $isOpen ? 'DIBUKA OTOMATIS (00:01 - 06:30 WIB)' : ($isPastLimit ? 'DITUTUP OTOMATIS (Pukul 06:31 WIB)' : 'BELUM DIBUKA (Pukul 00:01 WIB)'),
             'daily_status' => $dailyStatus,
         ];
     }

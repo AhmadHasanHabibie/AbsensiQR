@@ -15,11 +15,22 @@ class GuruPiketController extends Controller
     /**
      * Menampilkan semua data guru piket
      */
-    public function index()
+    public function index(Request $request)
     {
-        $guruPikets = User::where('role', 'piket')
-            ->latest()
-            ->paginate(10);
+        $query = User::where('role', 'piket');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
+
+        $guruPikets = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view('Admin.GuruPiket.Index', compact('guruPikets'));
     }
@@ -39,7 +50,7 @@ class GuruPiketController extends Controller
     {
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'nip'      => ['required', 'string', 'unique:users,nip'],
+            'nip'      => ['required', 'string'],
             'username' => ['required', 'string', 'unique:users,username'],
             'password' => ['required', 'string', 'min:6'],
             'status'   => ['required'],
@@ -89,7 +100,7 @@ class GuruPiketController extends Controller
 
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'nip'      => ['required', 'string', 'unique:users,nip,' . $guruPiket->id],
+            'nip'      => ['required', 'string'],
             'username' => ['required', 'string', 'unique:users,username,' . $guruPiket->id],
             'status'   => ['required'],
         ]);

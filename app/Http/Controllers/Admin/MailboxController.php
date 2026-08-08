@@ -24,7 +24,11 @@ class MailboxController extends Controller
             });
         }
 
-        $mailboxes = $query->latest()->paginate(15);
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $mailboxes = $query->latest()->paginate(15)->withQueryString();
 
         return view('Admin.Mailbox.Index', compact('mailboxes'));
     }

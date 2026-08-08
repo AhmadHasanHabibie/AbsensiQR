@@ -18,12 +18,15 @@
         </div>
     @endif
 
-    {{-- FILTER SEARCH --}}
+    {{-- FILTER SEARCH & TANGGAL --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-3">
             <form method="GET" action="{{ route('admin.mailbox.index') }}" class="row g-2">
-                <div class="col-md-10">
+                <div class="col-md-6">
                     <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Cari nama siswa atau NIS...">
+                </div>
+                <div class="col-md-4">
+                    <input type="date" name="date" class="form-control" value="{{ request('date') }}" title="Filter Berdasarkan Tanggal Terbit">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i> Cari</button>

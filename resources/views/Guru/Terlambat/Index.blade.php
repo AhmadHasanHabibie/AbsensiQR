@@ -3,6 +3,52 @@
 @section('title', 'Data Terlambat')
 
 @section('content')
+
+{{-- ============================================================ --}}
+{{-- HOLIDAY LOCK MODAL (TAHAP 4) --}}
+{{-- ============================================================ --}}
+@if ($dailyStatus['is_holiday'])
+<div class="modal fade" id="holidayLockModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="holidayLockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white rounded-top-4 p-3">
+                <h5 class="modal-title fw-bold mb-0" id="holidayLockModalLabel">
+                    <i class="bi bi-calendar-x-fill me-2"></i> Maaf Sedang Libur
+                </h5>
+                <button type="button" id="holidayModalCloseBtn" class="btn-close btn-close-white" aria-label="Kembali ke Dashboard"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <div style="width:72px;height:72px;background:rgba(220,53,69,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                        <i class="bi bi-moon-stars-fill text-danger" style="font-size:32px;"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Data Terlambat Tidak Tersedia</h5>
+                    <p class="text-muted mb-1">Hari ini adalah <strong class="text-danger">{{ $dailyStatus['status'] }}</strong>.</p>
+                    <p class="text-muted small mb-0">Pencatatan keterlambatan hanya aktif pada hari belajar.</p>
+                </div>
+                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                    <i class="bi bi-info-circle me-1"></i> {{ \Carbon\Carbon::now('Asia/Jakarta')->isoFormat('dddd, D MMMM YYYY') }}
+                </span>
+            </div>
+            <div class="modal-footer bg-light rounded-bottom-4 p-3 d-flex justify-content-center">
+                <a href="{{ route('guru.dashboard') }}" class="btn btn-danger px-5 fw-semibold rounded-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var holidayModal = new bootstrap.Modal(document.getElementById('holidayLockModal'));
+        holidayModal.show();
+        document.getElementById('holidayModalCloseBtn').addEventListener('click', function () {
+            window.location.href = '{{ route("guru.dashboard") }}';
+        });
+    });
+</script>
+@endif
+
 <div class="container-fluid">
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">

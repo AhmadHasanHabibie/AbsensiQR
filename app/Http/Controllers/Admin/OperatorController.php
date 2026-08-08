@@ -16,11 +16,22 @@ class OperatorController extends Controller
     /**
      * Menampilkan semua data operator
      */
-    public function index()
+    public function index(Request $request)
     {
-        $operators = User::where('role', 'operator')
-            ->latest()
-            ->paginate(10);
+        $query = User::where('role', 'operator');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
+
+        $operators = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view(
             'Admin.Operator.Index',
@@ -49,8 +60,7 @@ class OperatorController extends Controller
             ],
             'nip' => [
                 'required',
-                'string',
-                'unique:users,nip'
+                'string'
             ],
             'username' => [
                 'required',
@@ -122,8 +132,7 @@ class OperatorController extends Controller
             ],
             'nip' => [
                 'required',
-                'string',
-                'unique:users,nip,' . $operator->id
+                'string'
             ],
             'username' => [
                 'required',

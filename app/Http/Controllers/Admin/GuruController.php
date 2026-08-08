@@ -14,11 +14,22 @@ class GuruController extends Controller
     /**
      * Menampilkan semua data guru
      */
-    public function index()
+    public function index(Request $request)
     {
-        $gurus = User::where('role', 'teacher')
-            ->latest()
-            ->paginate(10);
+        $query = User::where('role', 'teacher');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
+
+        $gurus = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view('Admin.Guru.Index', compact('gurus'));
     }
@@ -38,7 +49,7 @@ class GuruController extends Controller
     {
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'nip'      => ['required', 'string', 'unique:users,nip'],
+            'nip'      => ['required', 'string'],
             'username' => ['required', 'string', 'unique:users,username'],
             'password' => ['required', 'string', 'min:6'],
             'status'   => ['required'],
@@ -88,7 +99,7 @@ class GuruController extends Controller
 
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'nip'      => ['required', 'string', 'unique:users,nip,' . $guru->id],
+            'nip'      => ['required', 'string'],
             'username' => ['required', 'string', 'unique:users,username,' . $guru->id],
             'status'   => ['required'],
         ]);

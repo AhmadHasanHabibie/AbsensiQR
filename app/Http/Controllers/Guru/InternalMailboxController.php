@@ -21,7 +21,11 @@ class InternalMailboxController extends Controller
             $query->where('status', $request->status);
         }
 
-        $messages = $query->latest()->paginate(10);
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $messages = $query->latest()->paginate(10)->withQueryString();
 
         $unreadCount = TeacherMailbox::where('receiver_id', Auth::id())
             ->where('status', 'unread')

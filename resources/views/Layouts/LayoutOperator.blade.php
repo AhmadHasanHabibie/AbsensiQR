@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* Hide native Edge browser password reveal button */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
+
         :root {
             --primary: #0d6efd;
             --primary-dark: #0a1628;
@@ -387,6 +393,16 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Modal Lifecycle Cleanup Handler
+    document.addEventListener('hidden.bs.modal', function () {
+        if (!document.querySelector('.modal.show')) {
+            document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }
+    });
+
     // Initialize Bootstrap Toasts
     var toastElList = [].slice.call(document.querySelectorAll('.toast'));
     toastElList.map(function (toastEl) {

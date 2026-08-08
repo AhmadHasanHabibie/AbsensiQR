@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Services\AcademicCalendarService;
 use App\Services\AttendanceTimeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ class LateController extends Controller
      */
     public function index(Request $request)
     {
-        $isScanOpen = AttendanceTimeService::isAttendanceOpen();
+        $dailyStatus = AcademicCalendarService::getDailyStatus();
+        $isScanOpen  = AttendanceTimeService::isAttendanceOpen();
 
         $dateStr    = $request->input('date', today()->toDateString());
         $targetDate = Carbon::parse($dateStr);
@@ -36,7 +38,7 @@ class LateController extends Controller
 
         $totalTerlambat = $lateAttendances->count();
 
-        return view('Operator.Terlambat.Index', compact('isScanOpen', 'lateAttendances', 'totalTerlambat', 'dateStr'));
+        return view('Operator.Terlambat.Index', compact('isScanOpen', 'lateAttendances', 'totalTerlambat', 'dateStr', 'dailyStatus'));
     }
 
     /**
@@ -44,12 +46,24 @@ class LateController extends Controller
      */
     public function create()
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            $status = AcademicCalendarService::currentStatus();
+            return redirect()
+                ->route('operator.dashboard')
+                ->with('error', "Data Terlambat tidak dapat diinput karena hari ini adalah {$status}.");
+        }
+
         $isScanOpen = AttendanceTimeService::isAttendanceOpen();
 
         if ($isScanOpen) {
             return redirect()
                 ->route('operator.terlambat.index')
-                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (06:00 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
+                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (00:01 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
         }
 
         $excludedStudentIds = Attendance::whereDate('attendance_date', today())
@@ -74,12 +88,24 @@ class LateController extends Controller
      */
     public function store(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            $status = AcademicCalendarService::currentStatus();
+            return redirect()
+                ->route('operator.terlambat.index')
+                ->with('error', "Data Terlambat tidak dapat disimpan karena hari ini adalah {$status}.");
+        }
+
         $isScanOpen = AttendanceTimeService::isAttendanceOpen();
 
         if ($isScanOpen) {
             return redirect()
                 ->route('operator.terlambat.index')
-                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (06:00 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
+                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (00:01 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
         }
 
         $validated = $request->validate([

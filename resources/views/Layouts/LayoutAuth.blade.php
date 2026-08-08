@@ -200,6 +200,12 @@
             margin-bottom: 6px;
         }
 
+        /* Hide native Edge browser password reveal button */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
+
         .input-group {
             border-radius: 12px;
             overflow: hidden;

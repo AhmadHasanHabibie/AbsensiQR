@@ -323,7 +323,15 @@
                     </div>
                     <div>
                         <div class="cal-stat-label">Hari Ini</div>
-                        @if($stats['today'])
+                        @if(isset($stats['today_info']))
+                        @php $todayInf = $stats['today_info']; @endphp
+                        <div class="fw-bold text-dark" style="font-size:13px;">
+                            {{ $todayInf['day_name'] }}, {{ \Carbon\Carbon::parse($todayInf['date'])->translatedFormat('d M Y') }}
+                        </div>
+                        <div class="mt-1">
+                            <span class="badge {{ $todayInf['badge_class'] ?? 'bg-secondary' }} fs-11">{{ $todayInf['status'] }}</span>
+                        </div>
+                        @elseif($stats['today'])
                         <div class="fw-bold text-dark" style="font-size:13px;">{{ $stats['today']->day_name }}</div>
                         <div class="mt-1">
                             @php $todayBadge = $stats['today']->status_badge_class; @endphp
@@ -540,6 +548,9 @@
             </div>
         </div>
         @else
+        @php
+            $isPatchedRole = in_array(Auth::user()?->role, ['admin', 'teacher', 'piket', 'guru_piket']);
+        @endphp
         <div class="table-responsive">
             <table class="table cal-table mb-0">
                 <thead>
@@ -548,11 +559,15 @@
                         <th>Tanggal</th>
                         <th>Hari</th>
                         <th>Sem.</th>
+                        @if(!$isPatchedRole)
                         <th>Status</th>
+                        @endif
                         <th>Kategori</th>
                         <th>Kegiatan</th>
                         <th width="60" class="text-center">QR</th>
+                        @if(!$isPatchedRole)
                         <th width="90" class="text-center">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -569,6 +584,7 @@
                                 {{ $cal->semester }}
                             </span>
                         </td>
+                        @if(!$isPatchedRole)
                         <td>
                             @php
                                 $statusClass = match($cal->status) {
@@ -585,6 +601,7 @@
                             @endphp
                             <span class="badge {{ $statusClass }} rounded-pill fs-11">{{ $cal->status }}</span>
                         </td>
+                        @endif
                         <td>
                             <span class="badge {{ $cal->category_badge_class }} rounded-pill fs-11">{{ $cal->category }}</span>
                         </td>
@@ -596,6 +613,7 @@
                             <i class="bi bi-slash-circle text-muted fs-5" title="QR Nonaktif"></i>
                             @endif
                         </td>
+                        @if(!$isPatchedRole)
                         <td class="text-center">
                             <button type="button"
                                     class="btn btn-sm btn-outline-primary rounded-2 fw-semibold"
@@ -605,6 +623,7 @@
                                 <i class="bi bi-eye me-1"></i>Detail
                             </button>
                         </td>
+                        @endif
                     </tr>
                     @endforeach
                 </tbody>
@@ -715,6 +734,7 @@
 </div>
 @endif
 
+@if(!in_array(Auth::user()?->role, ['admin', 'teacher', 'piket', 'guru_piket']))
 {{-- ============================================================ --}}
 {{-- MODAL: DETAIL KALENDER                                        --}}
 {{-- ============================================================ --}}
@@ -777,32 +797,7 @@
                 <div class="text-muted fs-13" id="dDescription">—</div>
             </div>
 
-            <div class="row g-2 mb-3">
-                <div class="col-6 col-md-3">
-                    <div class="p-2 bg-white border rounded-3 text-center">
-                        <div class="detail-field-label mb-1">QR Scan</div>
-                        <div id="dQrStatus"><i class="bi bi-dash text-muted"></i></div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="p-2 bg-white border rounded-3 text-center">
-                        <div class="detail-field-label mb-1">Abs. Guru</div>
-                        <div id="dTeacherAtt"><i class="bi bi-dash text-muted"></i></div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="p-2 bg-white border rounded-3 text-center">
-                        <div class="detail-field-label mb-1">Abs. Siswa</div>
-                        <div id="dStudentAtt"><i class="bi bi-dash text-muted"></i></div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="p-2 bg-white border rounded-3 text-center">
-                        <div class="detail-field-label mb-1">Operator</div>
-                        <div id="dOperatorAtt"><i class="bi bi-dash text-muted"></i></div>
-                    </div>
-                </div>
-            </div>
+
 
             <div class="row g-2">
                 <div class="col-6">
@@ -817,6 +812,7 @@
         </div>
     </div>
 </div>
+@endif
 
 @if($isSuperAdmin ?? (Auth::user()?->role === 'super_admin'))
 {{-- ============================================================ --}}
@@ -1021,14 +1017,7 @@ function showDetail(id) {
         document.getElementById('dCreatedAt').textContent    = d.created_at || '—';
         document.getElementById('dUpdatedAt').textContent    = d.updated_at || '—';
 
-        const boolIcon = (v) => v
-            ? '<i class="bi bi-check-circle-fill bool-yes"></i>'
-            : '<i class="bi bi-x-circle-fill bool-no"></i>';
 
-        document.getElementById('dQrStatus').innerHTML      = boolIcon(d.qr_status);
-        document.getElementById('dTeacherAtt').innerHTML    = boolIcon(d.teacher_attendance);
-        document.getElementById('dStudentAtt').innerHTML    = boolIcon(d.student_attendance);
-        document.getElementById('dOperatorAtt').innerHTML   = boolIcon(d.operator_attendance);
 
         document.getElementById('detailLoadingState').classList.add('d-none');
         document.getElementById('detailContent').classList.remove('d-none');

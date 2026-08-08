@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Services\AcademicCalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,6 +21,8 @@ class LateController extends Controller
             return $this->classNotAssigned();
         }
 
+        $dailyStatus = AcademicCalendarService::getDailyStatus();
+
         $lateAttendances = Attendance::with('student.schoolClass')
             ->whereDate('attendance_date', today())
             ->where('is_late', true)
@@ -31,7 +34,8 @@ class LateController extends Controller
 
         return view('Guru.Terlambat.Index', compact(
             'class',
-            'lateAttendances'
+            'lateAttendances',
+            'dailyStatus'
         ));
     }
 
@@ -44,6 +48,18 @@ class LateController extends Controller
 
         if (! $class) {
             return $this->classNotAssigned();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            $status = AcademicCalendarService::currentStatus();
+            return redirect()
+                ->route('guru.dashboard')
+                ->with('error', "Data Terlambat tidak dapat diinput karena hari ini adalah {$status}.");
         }
 
         $students = Attendance::with('student')
@@ -80,6 +96,18 @@ class LateController extends Controller
 
         if (! $class) {
             return $this->classNotAssigned();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            $status = AcademicCalendarService::currentStatus();
+            return redirect()
+                ->route('guru.terlambat.index')
+                ->with('error', "Data Terlambat tidak dapat disimpan karena hari ini adalah {$status}.");
         }
 
         $validated = $request->validate([

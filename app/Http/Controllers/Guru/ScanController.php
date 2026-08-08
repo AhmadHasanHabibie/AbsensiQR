@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\AttendanceLock;
 use App\Models\User;
+use App\Services\AcademicCalendarService;
 use App\Services\AttendanceTimeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,10 +18,11 @@ class ScanController extends Controller
      */
     public function index()
     {
+        $dailyStatus = AcademicCalendarService::getDailyStatus();
         $isScanOpen  = AttendanceTimeService::isAttendanceOpen();
         $isPastLimit = AttendanceTimeService::isAttendanceExpired();
 
-        return view('Guru.Scan.Index', compact('isScanOpen', 'isPastLimit'));
+        return view('Guru.Scan.Index', compact('isScanOpen', 'isPastLimit', 'dailyStatus'));
     }
 
     /**
@@ -28,6 +30,18 @@ class ScanController extends Controller
      */
     public function store(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Holiday Lock (TAHAP 4)
+        |--------------------------------------------------------------------------
+        */
+        if (AcademicCalendarService::isHoliday()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Maaf, sedang libur. Scan QR tidak dapat dilakukan hari ini.',
+            ], 403);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Centralized Server Time Validation (Asia/Jakarta)

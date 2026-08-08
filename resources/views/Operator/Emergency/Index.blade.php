@@ -4,6 +4,51 @@
 
 @section('content')
 
+{{-- ============================================================ --}}
+{{-- HOLIDAY LOCK MODAL (TAHAP 4) --}}
+{{-- ============================================================ --}}
+@if ($dailyStatus['is_holiday'])
+<div class="modal fade" id="holidayLockModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="holidayLockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white rounded-top-4 p-3">
+                <h5 class="modal-title fw-bold mb-0" id="holidayLockModalLabel">
+                    <i class="bi bi-calendar-x-fill me-2"></i> Maaf Sedang Libur
+                </h5>
+                <button type="button" id="holidayModalCloseBtn" class="btn-close btn-close-white" aria-label="Kembali ke Dashboard"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <div style="width:72px;height:72px;background:rgba(220,53,69,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                        <i class="bi bi-moon-stars-fill text-danger" style="font-size:32px;"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Absensi Darurat Tidak Tersedia</h5>
+                    <p class="text-muted mb-1">Hari ini adalah <strong class="text-danger">{{ $dailyStatus['status'] }}</strong>.</p>
+                    <p class="text-muted small mb-0">Prosedur absensi darurat hanya dapat dilakukan pada hari belajar.</p>
+                </div>
+                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                    <i class="bi bi-info-circle me-1"></i> {{ \Carbon\Carbon::now('Asia/Jakarta')->isoFormat('dddd, D MMMM YYYY') }}
+                </span>
+            </div>
+            <div class="modal-footer bg-light rounded-bottom-4 p-3 d-flex justify-content-center">
+                <a href="{{ route('operator.dashboard') }}" class="btn btn-danger px-5 fw-semibold rounded-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var holidayModal = new bootstrap.Modal(document.getElementById('holidayLockModal'));
+        holidayModal.show();
+        document.getElementById('holidayModalCloseBtn').addEventListener('click', function () {
+            window.location.href = '{{ route("operator.dashboard") }}';
+        });
+    });
+</script>
+@endif
+
 <div class="container-fluid py-2">
 
     {{-- Header --}}
@@ -18,6 +63,18 @@
         </div>
     </div>
 
+    {{-- Alert: Tampilkan Holiday Banner jika libur, WARNING jika bukan libur --}}
+    @if ($dailyStatus['is_holiday'])
+    <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3">
+        <div style="width:48px;height:48px;background:rgba(220,53,69,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#dc3545;font-size:24px;flex-shrink:0;">
+            <i class="bi bi-calendar-x-fill"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold mb-1 text-dark">Hari Ini Sedang Libur</h6>
+            <p class="mb-0 text-dark small">Absensi Darurat tidak tersedia karena hari ini adalah <strong>{{ $dailyStatus['status'] }}</strong>. Prosedur ini hanya aktif pada hari belajar.</p>
+        </div>
+    </div>
+    @else
     {{-- Alert Warning Header --}}
     <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3">
         <div style="width:48px;height:48px;background:rgba(255,193,7,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#856404;font-size:24px;flex-shrink:0;">
@@ -28,7 +85,9 @@
             <p class="mb-0 text-dark small">Presensi darurat mencatat data kehadiran dengan status sementara <span class="badge bg-warning text-dark">Hadir Manual</span>. Fitur ini hanya digunakan saat Scan QR tidak memungkinkan.</p>
         </div>
     </div>
+    @endif
 
+    @if (! $dailyStatus['is_holiday'])
     <div class="row g-4">
 
         {{-- Form Absensi Darurat --}}
@@ -182,6 +241,8 @@
         </div>
 
     </div>
+
+    @endif {{-- end @if (! $dailyStatus['is_holiday']) --}}
 
 </div>
 

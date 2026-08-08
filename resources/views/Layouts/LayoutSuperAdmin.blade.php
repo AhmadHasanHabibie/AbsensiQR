@@ -14,6 +14,12 @@
     @stack('styles')
 
     <style>
+        /* Hide native Edge browser password reveal button */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
+
         :root {
             --sa-bg-light: #f0f4f8;
             --sa-card-bg: #ffffff;
@@ -899,8 +905,17 @@
             }
         }
 
-        /* ==================== FLASH SESSION TOASTS ==================== */
+        /* ==================== FLASH SESSION TOASTS & MODAL CLEANUP ==================== */
         document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('hidden.bs.modal', function () {
+                if (!document.querySelector('.modal.show')) {
+                    document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                }
+            });
+
             const successEl = document.getElementById('flash-success-msg');
             const errorEl   = document.getElementById('flash-error-msg');
             const warningEl = document.getElementById('flash-warning-msg');
