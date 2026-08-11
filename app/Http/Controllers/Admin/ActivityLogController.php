@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
@@ -13,33 +14,41 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
-        // 4 Summary Cards
-        $aktivitasHariIni = ActivityLog::whereDate('created_at', today())->count();
+        // Daftar role SuperAdmin — digunakan untuk mengeksklusikan dari seluruh query Admin
+        // ActivityLog menyimpan field 'role' langsung, bukan relasi user_id untuk filter awal
+        $excludedRoles = ['super_admin'];
 
-        $aktivitasMingguIni = ActivityLog::whereDate('created_at', '>=', now()->startOfWeek())->count();
+        // 4 Summary Cards — tidak menghitung SuperAdmin
+        $aktivitasHariIni = ActivityLog::whereDate('created_at', today())
+            ->whereNotIn('role', $excludedRoles)
+            ->count();
+
+        $aktivitasMingguIni = ActivityLog::whereDate('created_at', '>=', now()->startOfWeek())
+            ->whereNotIn('role', $excludedRoles)
+            ->count();
 
         $aktivitasBulanIni = ActivityLog::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
+            ->whereNotIn('role', $excludedRoles)
             ->count();
 
-        $totalAktivitas = ActivityLog::count();
+        $totalAktivitas = ActivityLog::whereNotIn('role', $excludedRoles)->count();
 
-        // Query dengan Eager Loading
+        // Query dengan Eager Loading — tidak menyertakan SuperAdmin
         $query = ActivityLog::with('user')
+            ->whereNotIn('role', $excludedRoles)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('role')) {
             $roleParam = $request->role;
-            if ($roleParam === 'piket' || $roleParam === 'guru_piket') {
+            // Tolak secara diam-diam jika admin mencoba memfilter super_admin secara manual
+            if ($roleParam === 'super_admin') {
+                // Abaikan filter — query sudah mengeksklusikan SuperAdmin di atas
+            } elseif ($roleParam === 'piket' || $roleParam === 'guru_piket') {
                 $query->whereIn('role', ['piket', 'guru_piket']);
             } else {
                 $query->where('role', $roleParam);
             }
-        } else {
-            $query->where(function ($q) {
-                $q->where('role', '!=', 'super_admin')
-                  ->orWhereNull('role');
-            });
         }
 
         if ($request->filled('module')) {
@@ -58,6 +67,8 @@ class ActivityLogController extends Controller
                             ->orWhere('username', 'like', "%{$search}%");
                     });
             });
+            // Pastikan hasil pencarian tetap tidak menyertakan SuperAdmin
+            $query->whereNotIn('role', ['super_admin']);
         }
 
         if ($request->filled('date_range')) {

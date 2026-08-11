@@ -55,7 +55,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1">Scan QR Absensi Otomatis</h3>
-            <p class="text-muted mb-0">Sistem Absensi Berbasis Waktu Server (06:00:00 – 06:30:59 WIB)</p>
+            <p class="text-muted mb-0">Sistem Absensi Berbasis Waktu Server (03:00:00 – 06:30:59 WIB)</p>
         </div>
 
         <div class="d-flex align-items-center gap-3">
@@ -64,11 +64,11 @@
                 <i class="bi {{ $isScanOpen ? 'bi-check-circle-fill' : 'bi-clock-history' }} me-1"></i>
                 <span id="status-badge-text">
                     @if($isScanOpen)
-                        DIBUKA OTOMATIS (06:00 - 06:30 WIB)
+                        DIBUKA OTOMATIS (03:00 - 06:30 WIB)
                     @elseif($isPastLimit)
                         DITUTUP OTOMATIS (Pukul 06:31 WIB)
                     @else
-                        BELUM DIBUKA (Pukul 06:00 WIB)
+                        BELUM DIBUKA (Pukul 03:00 WIB)
                     @endif
                 </span>
             </span>
@@ -106,7 +106,7 @@
         @elseif(!$isScanOpen)
             <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-4 rounded-4">
                 <span class="badge bg-primary text-white px-2.5 py-1.5 me-1"><i class="bi bi-info-circle-fill me-1"></i> Informasi Jadwal</span>
-                <span>Sistem absensi QR belum dibuka. Pintu absensi akan terbuka otomatis tepat pada pukul 06:00:00 WIB.</span>
+                <span>Sistem absensi QR belum dibuka. Pintu absensi akan terbuka otomatis tepat pada pukul 03:00:00 WIB.</span>
             </div>
         @endif
     </div>
@@ -144,7 +144,7 @@
                             @if($isPastLimit)
                                 Sesuai ketentuan, absensi tepat waktu secara otomatis ditutup pada pukul 06:31:00 WIB.
                             @else
-                                Pintu absensi QR akan dibuka otomatis oleh sistem tepat pukul 06:00:00 WIB.
+                                Pintu absensi QR akan dibuka otomatis oleh sistem tepat pukul 03:00:00 WIB.
                             @endif
                         </p>
                     </div>
@@ -197,7 +197,7 @@
                 </div>
                 <div class="card-body p-4">
                     <ul class="mb-0 text-muted">
-                        <li class="mb-2"><strong>Buka Otomatis:</strong> Sistem membuka scanner QR tepat pukul <strong>06:00:00 WIB</strong>.</li>
+                        <li class="mb-2"><strong>Buka Otomatis:</strong> Sistem membuka scanner QR tepat pukul <strong>03:00:00 WIB</strong>.</li>
                         <li class="mb-2"><strong>Batas Tepat Waktu:</strong> Absensi dianggap tepat waktu sampai pukul <strong>06:30:59 WIB</strong>.</li>
                         <li class="mb-2"><strong>Tutup Otomatis:</strong> Sistem menutup total pemindaian tepat pukul <strong>06:31:00 WIB</strong>. Tidak ada tombol manual.</li>
                         <li class="mb-0"><strong>Siswa Terlambat:</strong> Siswa yang hadir setelah 06:30 WIB wajib diproses melalui menu <strong>Data Terlambat</strong> oleh Operator.</li>
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const currentTimeVal = `${hours}:${minutes}:${seconds}`;
-        const shouldBeOpen = (currentTimeVal >= '06:00:00' && currentTimeVal <= '06:30:59');
+        const shouldBeOpen = (currentTimeVal >= '03:00:00' && currentTimeVal <= '06:30:59');
 
         if (shouldBeOpen !== isScanActive) {
             isScanActive = shouldBeOpen;
@@ -359,9 +359,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const pSubtitle = document.getElementById('placeholder-subtitle');
         const cdBanner = document.getElementById('countdown-banner');
 
-        if (timeVal >= '06:00:00' && timeVal <= '06:30:59') {
+        if (timeVal >= '03:00:00' && timeVal <= '06:30:59') {
             if (badge) badge.className = 'badge fs-6 px-3 py-2 bg-success';
-            if (badgeText) badgeText.textContent = 'DIBUKA OTOMATIS (06:00 - 06:30 WIB)';
+            if (badgeText) badgeText.textContent = 'DIBUKA OTOMATIS (03:00 - 06:30 WIB)';
             if (placeholder) placeholder.classList.add('d-none');
             if (wrapper) wrapper.classList.remove('d-none');
             if (cdBanner) cdBanner.classList.remove('d-none');
@@ -391,12 +391,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } else {
             if (badge) badge.className = 'badge fs-6 px-3 py-2 bg-danger';
-            if (badgeText) badgeText.textContent = 'BELUM DIBUKA (Pukul 06:00 WIB)';
+            if (badgeText) badgeText.textContent = 'BELUM DIBUKA (Pukul 03:00 WIB)';
             if (placeholder) placeholder.classList.remove('d-none');
             if (wrapper) wrapper.classList.add('d-none');
             if (cdBanner) cdBanner.classList.add('d-none');
             if (pTitle) pTitle.textContent = 'Absensi QR Belum Dibuka';
-            if (pSubtitle) pSubtitle.textContent = 'Pintu absensi QR akan dibuka otomatis oleh sistem tepat pukul 06:00:00 WIB.';
+            if (pSubtitle) pSubtitle.textContent = 'Pintu absensi QR akan dibuka otomatis oleh sistem tepat pukul 03:00:00 WIB.';
             stopScanner();
         }
     }

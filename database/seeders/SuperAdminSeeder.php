@@ -20,7 +20,7 @@ class SuperAdminSeeder extends Seeder
                 'nip'       => null,
                 'nis'       => null,
                 'password'  => Hash::make('superadmin123'),
-                'pin'       => Hash::make('123456'),
+                'pin'       => Hash::make('131313'),
                 'role'      => User::ROLE_SUPER_ADMIN ?? 'super_admin',
                 'class_id'  => null,
                 'qr_code'   => null,

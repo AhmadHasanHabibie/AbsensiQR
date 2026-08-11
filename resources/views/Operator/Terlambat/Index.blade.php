@@ -71,7 +71,7 @@
     @if ($isScanOpen)
         <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-4 rounded-4">
             <i class="bi bi-clock-history fs-5 text-info"></i>
-            <span>Scan QR Absensi sedang berlangsung otomatis (06:00 – 06:30 WIB). Input Keterlambatan akan aktif otomatis pada pukul 06:31:00 WIB.</span>
+            <span>Scan QR Absensi sedang berlangsung otomatis (03:00 – 06:30 WIB). Input Keterlambatan akan aktif otomatis pada pukul 06:31:00 WIB.</span>
         </div>
     @endif
 

@@ -63,7 +63,7 @@ class LateController extends Controller
         if ($isScanOpen) {
             return redirect()
                 ->route('operator.terlambat.index')
-                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (00:01 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
+                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (03:00 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
         }
 
         $excludedStudentIds = Attendance::whereDate('attendance_date', today())
@@ -105,7 +105,7 @@ class LateController extends Controller
         if ($isScanOpen) {
             return redirect()
                 ->route('operator.terlambat.index')
-                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (00:01 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
+                ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (03:00 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');
         }
 
         $validated = $request->validate([

@@ -37,7 +37,19 @@ class RoleMiddleware
             if (Auth::user()->isGuruPiket()) {
                 return redirect()->route('piket.dashboard');
             }
+
             abort(403, 'Anda tidak memiliki hak akses.');
+        }
+
+        // Verifikasi PIN Tambahan khusus untuk Role Admin
+        if ($role === 'admin' && Auth::user()->isAdmin()) {
+            if ($request->routeIs('admin.pin.*')) {
+                return $next($request);
+            }
+
+            if (session('admin_verified') !== true) {
+                return redirect()->route('admin.pin.verify');
+            }
         }
 
         return $next($request);

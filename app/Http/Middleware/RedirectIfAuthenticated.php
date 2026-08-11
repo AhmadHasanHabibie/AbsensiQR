@@ -26,7 +26,9 @@ class RedirectIfAuthenticated
                     'super_admin' => session('super_admin_verified') === true
                         ? redirect()->route('superadmin.dashboard')
                         : redirect()->route('superadmin.pin.verify'),
-                    'admin'       => redirect()->route('admin.dashboard'),
+                    'admin'       => session('admin_verified') === true
+                        ? redirect()->route('admin.dashboard')
+                        : redirect()->route('admin.pin.verify'),
                     'teacher'     => redirect()->route('guru.dashboard'),
                     'student'     => redirect()->route('siswa.dashboard'),
                     'operator'    => redirect()->route('operator.dashboard'),

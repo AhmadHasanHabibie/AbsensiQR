@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogControll
 use App\Http\Controllers\Admin\SecurityCenterController as AdminSecurityCenterController;
 use App\Http\Controllers\Admin\BlockedIpController as AdminBlockedIpController;
 use App\Http\Controllers\Admin\EmergencyAuditController as AdminEmergencyAuditController;
+use App\Http\Controllers\Admin\PinController as AdminPinController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\ScanController as OperatorScanController;
 use App\Http\Controllers\Operator\LateController as OperatorLateController;
@@ -194,6 +195,9 @@ Route::middleware([
 ->name('admin.')
 
 ->group(function(){
+
+    Route::get('/verify-pin', [AdminPinController::class, 'showVerifyForm'])->name('pin.verify');
+    Route::post('/verify-pin', [AdminPinController::class, 'processVerify'])->name('pin.process');
 
 
 

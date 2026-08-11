@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\LoginHistory;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class LoginHistoryController extends Controller
@@ -13,36 +14,45 @@ class LoginHistoryController extends Controller
      */
     public function index(Request $request)
     {
-        // 5 Summary Metric Cards
-        $loginHariIni = LoginHistory::whereDate('login_at', today())->count();
+        // Daftar ID SuperAdmin — digunakan untuk mengeksklusikan dari seluruh query Admin
+        $superAdminIds = User::where('role', 'super_admin')->pluck('id');
 
-        $loginMingguIni = LoginHistory::whereDate('login_at', '>=', now()->startOfWeek())->count();
+        // 5 Summary Metric Cards — tidak menghitung SuperAdmin
+        $loginHariIni = LoginHistory::whereDate('login_at', today())
+            ->whereNotIn('user_id', $superAdminIds)
+            ->count();
+
+        $loginMingguIni = LoginHistory::whereDate('login_at', '>=', now()->startOfWeek())
+            ->whereNotIn('user_id', $superAdminIds)
+            ->count();
 
         $loginBulanIni = LoginHistory::whereMonth('login_at', now()->month)
             ->whereYear('login_at', now()->year)
+            ->whereNotIn('user_id', $superAdminIds)
             ->count();
 
         $currentlyActiveCount = LoginHistory::whereNull('logout_at')
             ->whereDate('login_at', '>=', today()->subDays(1))
+            ->whereNotIn('user_id', $superAdminIds)
             ->count();
 
-        $totalLoginAll = LoginHistory::count();
+        $totalLoginAll = LoginHistory::whereNotIn('user_id', $superAdminIds)->count();
 
         // Query Login Histories dengan Eager Loading
         $query = LoginHistory::with('user')
+            ->whereNotIn('user_id', $superAdminIds)
             ->orderBy('login_at', 'desc');
 
         if ($request->filled('role')) {
             $roleParam = $request->role;
-            if ($roleParam === 'piket' || $roleParam === 'guru_piket') {
+            // Tolak secara diam-diam jika admin mencoba memfilter super_admin secara manual
+            if ($roleParam === 'super_admin') {
+                // Abaikan filter — query sudah mengeksklusikan SuperAdmin di atas
+            } elseif ($roleParam === 'piket' || $roleParam === 'guru_piket') {
                 $query->whereHas('user', fn ($q) => $q->whereIn('role', ['piket', 'guru_piket']));
             } else {
                 $query->whereHas('user', fn ($q) => $q->where('role', $roleParam));
             }
-        } else {
-            $query->whereHas('user', function ($q) {
-                $q->where('role', '!=', 'super_admin');
-            });
         }
 
         if ($request->filled('search')) {

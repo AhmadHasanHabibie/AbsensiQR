@@ -41,11 +41,11 @@
             <span class="badge fs-6 px-3 py-2 rounded-3 {{ $isScanOpen ? 'bg-success' : 'bg-danger' }}">
                 <i class="bi {{ $isScanOpen ? 'bi-check-circle-fill' : 'bi-clock-history' }} me-1"></i>
                 @if($isScanOpen)
-                    DIBUKA OTOMATIS (06:00 - 06:30 WIB)
+                    DIBUKA OTOMATIS (03:00 - 06:30 WIB)
                 @elseif($isPastLimit)
                     DITUTUP OTOMATIS (06:31 WIB)
                 @else
-                    BELUM DIBUKA (06:00 WIB)
+                    BELUM DIBUKA (03:00 WIB)
                 @endif
             </span>
             <div class="text-end border-start ps-3 d-none d-sm-block">
@@ -158,7 +158,7 @@
                             @elseif($isPastLimit)
                                 Scan QR ditutup 06.31 WIB
                             @else
-                                Buka 06:00:00 WIB
+                                Buka 03:00:00 WIB
                             @endif
                         </small>
                     </div>

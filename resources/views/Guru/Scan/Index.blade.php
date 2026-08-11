@@ -55,12 +55,12 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1">Scan QR Absensi Wali Kelas</h3>
-            <p class="text-muted mb-0">Pemindaian QR Code kehadiran tepat waktu siswa kelas (06:00 - 06:30 WIB).</p>
+            <p class="text-muted mb-0">Pemindaian QR Code kehadiran tepat waktu siswa kelas (03:00 - 06:30 WIB).</p>
         </div>
         <div class="d-flex align-items-center gap-3">
             <span class="badge fs-6 px-3 py-2 rounded-3 {{ $isScanOpen ? 'bg-success' : 'bg-danger' }}">
                 <i class="bi {{ $isScanOpen ? 'bi-check-circle-fill' : 'bi-clock-history' }} me-1"></i>
-                {{ $isScanOpen ? 'SCAN DIBUKA (06:00 - 06:30 WIB)' : 'SCAN DITUTUP (Pukul 06:31 WIB)' }}
+                {{ $isScanOpen ? 'SCAN DIBUKA (03:00 - 06:30 WIB)' : 'SCAN DITUTUP (Pukul 06:31 WIB)' }}
             </span>
             <div class="text-end d-none d-sm-block">
                 <div class="fw-semibold text-dark">{{ \Carbon\Carbon::now('Asia/Jakarta')->isoFormat('D MMMM YYYY') }}</div>

@@ -10,17 +10,18 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['username' => 'admin'],
             [
-                'name' => 'Administrator',
-                'nip' => null,
-                'nis' => null,
+                'name'     => 'Administrator',
+                'nip'      => null,
+                'nis'      => null,
                 'password' => Hash::make('admin123'),
-                'role' => 'admin',
+                'pin'      => Hash::make('131313'),
+                'role'     => 'admin',
                 'class_id' => null,
-                'qr_code' => null,
-                'status' => true,
+                'qr_code'  => null,
+                'status'   => true,
             ]
         );
     }

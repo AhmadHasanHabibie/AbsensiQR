@@ -14,11 +14,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-primary mb-1">Scan QR Absensi Siswa</h3>
-            <p class="text-muted mb-0">Halaman pemindaian QR Code kehadiran tepat waktu (06:00 - 06:30 WIB).</p>
+            <p class="text-muted mb-0">Halaman pemindaian QR Code kehadiran tepat waktu (03:00 - 06:30 WIB).</p>
         </div>
         <span class="badge fs-6 px-3 py-2 rounded-3 {{ $isScanOpen ? 'bg-success' : 'bg-danger' }}">
             <i class="bi {{ $isScanOpen ? 'bi-check-circle-fill' : 'bi-clock-history' }} me-1"></i>
-            {{ $isScanOpen ? 'SCAN DIBUKA (06:00 - 06:30 WIB)' : 'SCAN DITUTUP (Pukul 06:31 WIB)' }}
+            {{ $isScanOpen ? 'SCAN DIBUKA (03:00 - 06:30 WIB)' : 'SCAN DITUTUP (Pukul 06:31 WIB)' }}
         </span>
     </div>
 
@@ -30,7 +30,7 @@
                     <div class="card-body">
                         <i class="bi bi-clock-history text-secondary display-1 d-block mb-3 opacity-50"></i>
                         <h4 class="fw-bold text-dark mb-2">Maaf, waktu absensi QR hari ini telah berakhir.</h4>
-                        <p class="text-muted mb-4 small">Sistem absensi QR tepat waktu beroperasi mulai pukul <strong>06:00:00 WIB</strong> dan ditutup otomatis pada pukul <strong>06:31:00 WIB</strong>. Apabila Anda terlambat hadir di sekolah, silakan melapor kepada <strong>Petugas Operator</strong> di gerbang utama.</p>
+                        <p class="text-muted mb-4 small">Sistem absensi QR tepat waktu beroperasi mulai pukul <strong>03:00:00 WIB</strong> dan ditutup otomatis pada pukul <strong>06:31:00 WIB</strong>. Apabila Anda terlambat hadir di sekolah, silakan melapor kepada <strong>Petugas Operator</strong> di gerbang utama.</p>
                         <a href="{{ route('siswa.dashboard') }}" class="btn btn-primary px-4 py-2.5 rounded-pill shadow-sm fw-semibold">
                             <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard Siswa
                         </a>
@@ -39,7 +39,7 @@
             </div>
         </div>
     @else
-        {{-- ACTIVE SCANNER SETUP APABILA DALAM JENDELA WAKTU 06:00 - 06:30 WIB --}}
+        {{-- ACTIVE SCANNER SETUP APABILA DALAM JENDELA WAKTU 03:00 - 06:30 WIB --}}
         <div class="row">
             <div class="col-lg-8 mb-4">
                 <div class="card border-0 shadow-sm rounded-4">

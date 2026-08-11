@@ -77,7 +77,7 @@ class LoginController extends Controller
 
         return match ($user->role) {
             'super_admin' => redirect()->route('superadmin.pin.verify'),
-            'admin'       => redirect()->route('admin.dashboard'),
+            'admin'       => redirect()->route('admin.pin.verify'),
             'teacher'     => redirect()->route('guru.dashboard'),
             'student'     => redirect()->route('siswa.dashboard'),
             'operator'    => redirect()->route('operator.dashboard'),
@@ -120,7 +120,7 @@ class LoginController extends Controller
             \App\Models\ActivityLog::log('Logout', 'Authentication', "Pengguna {$user->name} ({$roleLabel}) telah logout dari sistem.", $user);
         }
 
-        $request->session()->forget('super_admin_verified');
+        $request->session()->forget(['super_admin_verified', 'admin_verified']);
         Auth::logout();
 
         $request->session()->invalidate();

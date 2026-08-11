@@ -92,7 +92,6 @@
                         <option value="operator" {{ request('role') == 'operator' ? 'selected' : '' }}>Operator</option>
                         <option value="piket" {{ request('role') == 'piket' || request('role') == 'guru_piket' ? 'selected' : '' }}>Guru Piket</option>
                         <option value="student" {{ request('role') == 'student' ? 'selected' : '' }}>Siswa</option>
-                        <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>SuperAdministrator</option>
                     </select>
                 </div>
 
