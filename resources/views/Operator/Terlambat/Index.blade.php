@@ -68,7 +68,7 @@
         </div>
     @endif
 
-    @if ($isScanOpen)
+    @if ($isScanOpen && !\App\Services\AttendanceTimeService::isTestingModeActive())
         <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-4 rounded-4">
             <i class="bi bi-clock-history fs-5 text-info"></i>
             <span>Scan QR Absensi sedang berlangsung otomatis (03:00 – 06:30 WIB). Input Keterlambatan akan aktif otomatis pada pukul 06:31:00 WIB.</span>
@@ -83,7 +83,7 @@
         </div>
 
         <div>
-            @if ($isScanOpen)
+            @if ($isScanOpen && !\App\Services\AttendanceTimeService::isTestingModeActive())
                 <button class="btn btn-primary d-flex align-items-center gap-2 disabled" title="Scan QR sedang berlangsung. Keterlambatan dapat diinput setelah pukul 06:31 WIB.">
                     <i class="bi bi-plus-circle fs-5"></i>
                     Tambah Data Terlambat

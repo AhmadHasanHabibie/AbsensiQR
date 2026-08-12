@@ -9,9 +9,32 @@
     $isPastLimit = \App\Services\AttendanceTimeService::isAttendanceExpired();
 @endphp
 
+{{-- ============================================================ --}}
+{{-- CENTERED SCAN RESULT MODAL (POP-UP DITENGAH) --}}
+{{-- ============================================================ --}}
+<div class="modal fade" id="scanResultModal" tabindex="-1" aria-labelledby="scanResultModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div id="modal-header-bg" class="p-4 text-center text-white">
+                <div id="modal-icon-container" class="mb-2"></div>
+                <h4 id="modal-title" class="fw-bold mb-1"></h4>
+                <p id="modal-subtitle" class="mb-0 small opacity-75"></p>
+            </div>
+            <div id="modal-body-content" class="modal-body p-4 text-center">
+                {{-- Dynamically Populated --}}
+            </div>
+            <div class="modal-footer bg-light p-3 justify-content-center border-0">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill fw-semibold" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid py-2">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold text-primary mb-1">Scan QR Absensi Siswa</h3>
             <p class="text-muted mb-0">Halaman pemindaian QR Code kehadiran tepat waktu (03:00 - 06:30 WIB).</p>
@@ -42,21 +65,47 @@
         {{-- ACTIVE SCANNER SETUP APABILA DALAM JENDELA WAKTU 03:00 - 06:30 WIB --}}
         <div class="row">
             <div class="col-lg-8 mb-4">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-primary text-white py-3">
-                        <h5 class="mb-0 fw-bold"><i class="bi bi-camera-video me-2"></i> Kamera Scanner Siswa</h5>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-primary text-white py-3 text-center d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold mx-auto"><i class="bi bi-camera-video me-2"></i> Kamera Scanner Siswa</h5>
                     </div>
-                    <div class="card-body">
-                        <div id="reader" class="border rounded-4 d-flex justify-content-center align-items-center" style="height: 420px; background:#f8f9fa;">
-                            <div class="text-center">
-                                <i class="bi bi-camera-fill display-1 text-primary"></i>
-                                <h5 class="mt-3 fw-bold">Kamera Belum Aktif</h5>
-                                <p class="text-muted mb-4">Tekan tombol di bawah untuk mulai melakukan scan QR.</p>
-                                <button id="startScanner" class="btn btn-primary px-4 py-2 rounded-pill">
-                                    <i class="bi bi-camera-video me-2"></i> Mulai Scan
-                                </button>
-                            </div>
+                    <div class="card-body p-4 text-center">
+
+                        <div class="mb-3">
+                            <p class="fw-semibold text-dark mb-0 fs-6">Arahkan QR Code Anda ke dalam area pemindaian.</p>
+                            <small class="text-muted">Gunakan kamera belakang atau tombol ganti kamera untuk hasil terbaik.</small>
                         </div>
+
+                        {{-- Scanner Camera Wrapper --}}
+                        <div id="reader-wrapper" class="position-relative mx-auto rounded-4 overflow-hidden bg-dark scanner-responsive-box" style="width:100%;">
+                            {{-- Controls overlay bar --}}
+                            <div class="scanner-controls-overlay position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center" style="z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
+                                <span class="badge bg-success bg-opacity-90 text-white fw-medium font-monospace fs-7 shadow-sm d-flex align-items-center gap-1.5 px-2.5 py-1.5">
+                                    <span class="pulse-dot"></span> LIVE SCANNER
+                                </span>
+                                <div class="d-flex gap-2">
+                                    <button id="btn-switch-camera" type="button" class="btn btn-dark btn-sm rounded-pill px-3 shadow-sm border border-secondary border-opacity-50 text-white" title="Ganti Kamera (Depan / Belakang)">
+                                        <i class="bi bi-camera-fill me-1 text-warning"></i> <span id="camera-label-text">Kamera Belakang</span>
+                                    </button>
+                                    <button id="btn-fullscreen-toggle" type="button" class="btn btn-dark btn-sm rounded-circle shadow-sm border border-secondary border-opacity-50 text-white" style="width:36px; height:36px;" title="Mode Layar Penuh (Fullscreen)">
+                                        <i class="bi bi-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Scanner Viewfinder Overlay Frame --}}
+                            <div class="scanner-viewfinder-overlay position-absolute top-0 start-0 end-0 bottom-0 pointer-events-none d-flex align-items-center justify-content-center" style="z-index: 5;">
+                                <div class="scanner-box-frame">
+                                </div>
+                            </div>
+
+                            <div id="reader" style="width:100%;"></div>
+                        </div>
+
+                        <div class="mt-3">
+                            <small class="text-muted"><i class="bi bi-shield-check text-success me-1"></i> Posisikan QR Code di tengah kotak. Hasil absensi akan pop-up otomatis di tengah layar.</small>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -67,9 +116,11 @@
                         <h5 class="mb-0 fw-bold">Status Scan</h5>
                     </div>
                     <div class="card-body text-center py-4">
-                        <i class="bi bi-qr-code-scan display-3 text-secondary mb-3"></i>
-                        <h5 class="fw-bold">Belum Ada QR</h5>
-                        <p class="text-muted mb-0 small">Hasil scan QR akan muncul di sini.</p>
+                        <div id="scan-result">
+                            <i class="bi bi-qr-code-scan display-3 text-secondary mb-3 opacity-50"></i>
+                            <h5 class="fw-bold">Belum Ada QR</h5>
+                            <p class="text-muted mb-0 small">Hasil scan QR akan muncul di sini.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -81,7 +132,7 @@
                         <ul class="mb-0 text-muted small">
                             <li class="mb-2">Arahkan kamera tepat ke QR Code.</li>
                             <li class="mb-2">Waktu tutup otomatis adalah pukul 06:31:00 WIB.</li>
-                            <li>Tunggu konfirmasi absensi berhasil dari layar.</li>
+                            <li>Tunggu konfirmasi absensi berhasil dari pop-up di layar.</li>
                         </ul>
                     </div>
                 </div>
@@ -92,3 +143,406 @@
 </div>
 
 @endsection
+
+@push('css')
+<style>
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #22c55e;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulseAnimation 1.5s infinite;
+    }
+    @keyframes pulseAnimation {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .scanner-responsive-box, #reader {
+        min-height: 380px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #0f172a !important;
+    }
+    @media (min-width: 992px) {
+        .scanner-responsive-box, #reader {
+            min-height: 480px;
+        }
+    }
+    #reader {
+        width: 100% !important;
+        height: 100% !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    #reader__scan_region {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: relative !important;
+    }
+    #reader video,
+    #reader__scan_region video {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        display: block !important;
+    }
+
+    .scanner-box-frame {
+        width: 240px;
+        height: 240px;
+        border: 2.5px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    @media (min-width: 576px) {
+        .scanner-box-frame {
+            width: 280px;
+            height: 280px;
+        }
+    }
+
+    .scanner-line {
+        display: none !important;
+    }
+
+    .scanner-fullscreen-active {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        z-index: 99999 !important;
+        border-radius: 0 !important;
+    }
+</style>
+@endpush
+
+@push('js')
+<script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const readerElem = document.getElementById("reader");
+    if (!readerElem) return;
+
+    let html5QrCode = null;
+    let processing = false;
+    let availableCameras = [];
+    let currentCameraIndex = 0;
+    let modalInstance = null;
+    let modalTimeout = null;
+
+    // Audio Chime Feedback
+    function playAudioBeep(type = 'success') {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.35);
+            }
+        } catch(e) {}
+    }
+
+    // Centered Result Modal Popup Handler
+    function showSuccessModal(data) {
+        playAudioBeep('success');
+
+        const headerBg = document.getElementById('modal-header-bg');
+        const iconContainer = document.getElementById('modal-icon-container');
+        const title = document.getElementById('modal-title');
+        const subtitle = document.getElementById('modal-subtitle');
+        const bodyContent = document.getElementById('modal-body-content');
+
+        if (headerBg) headerBg.className = 'p-4 text-center text-white bg-success bg-gradient';
+        if (iconContainer) iconContainer.innerHTML = '<i class="bi bi-check-circle-fill display-1"></i>';
+        if (title) title.textContent = 'ABSENSI BERHASIL!';
+        if (subtitle) subtitle.textContent = data.message || 'Siswa berhasil tercatat hadir tepat waktu.';
+
+        if (bodyContent) {
+            bodyContent.innerHTML = `
+                <div class="py-2">
+                    <h3 class="fw-bold text-dark mb-1">${data.student?.name || 'Siswa'}</h3>
+                    <p class="text-muted mb-3 fs-6">NIS: <strong>${data.student?.nis || '-'}</strong> | Kelas: <strong>${data.student?.class || '-'}</strong></p>
+                    <span class="badge bg-success fs-6 px-4 py-2.5 rounded-pill shadow-sm">
+                        <i class="bi bi-clock-fill me-1"></i> Absensi Berhasil
+                    </span>
+                </div>
+            `;
+        }
+
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(document.getElementById('scanResultModal'));
+        }
+
+        if (modalTimeout) clearTimeout(modalTimeout);
+        modalInstance.show();
+
+        showSuccess(data);
+
+        modalTimeout = setTimeout(() => {
+            modalInstance.hide();
+        }, 2500);
+    }
+
+    function showErrorModal(message) {
+        playAudioBeep('error');
+
+        const headerBg = document.getElementById('modal-header-bg');
+        const iconContainer = document.getElementById('modal-icon-container');
+        const title = document.getElementById('modal-title');
+        const subtitle = document.getElementById('modal-subtitle');
+        const bodyContent = document.getElementById('modal-body-content');
+
+        if (headerBg) headerBg.className = 'p-4 text-center text-white bg-danger bg-gradient';
+        if (iconContainer) iconContainer.innerHTML = '<i class="bi bi-x-circle-fill display-1"></i>';
+        if (title) title.textContent = 'SCAN GAGAL!';
+        if (subtitle) subtitle.textContent = 'Proses absensi QR Code tidak dapat diproses.';
+
+        if (bodyContent) {
+            bodyContent.innerHTML = `
+                <div class="py-2">
+                    <div class="alert alert-danger border-0 rounded-3 mb-0 fs-6">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> ${message}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(document.getElementById('scanResultModal'));
+        }
+
+        if (modalTimeout) clearTimeout(modalTimeout);
+        modalInstance.show();
+
+        showError(message);
+
+        modalTimeout = setTimeout(() => {
+            modalInstance.hide();
+        }, 3000);
+    }
+
+    document.getElementById('scanResultModal')?.addEventListener('hidden.bs.modal', function () {
+        processing = false;
+    });
+
+    function showSuccess(data) {
+        document.getElementById('scan-result').innerHTML = `
+            <div class="alert alert-success mb-0 rounded-3">
+                <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+                <h5 class="mt-3 fw-bold text-dark">${data.message || 'Absensi Berhasil'}</h5>
+                <hr class="my-2">
+                <h5 class="fw-bold mb-1 text-dark">${data.student?.name || 'Siswa'}</h5>
+                <p class="mb-1 text-muted">NIS : ${data.student?.nis || '-'}</p>
+                <p class="mb-0 text-muted">Kelas : ${data.student?.class || '-'}</p>
+            </div>
+        `;
+    }
+
+    function showError(message) {
+        document.getElementById('scan-result').innerHTML = `
+            <div class="alert alert-danger mb-0 rounded-3">
+                <i class="bi bi-x-circle-fill fs-1 text-danger"></i>
+                <h5 class="mt-3 mb-0 text-dark">${message}</h5>
+            </div>
+        `;
+    }
+
+    function onScanSuccess(decodedText) {
+        if (processing) return;
+        processing = true;
+
+        fetch("{{ route('guru.scan.store') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ qr_token: decodedText })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessModal(data);
+            } else {
+                showErrorModal(data.message);
+            }
+        })
+        .catch(() => {
+            showErrorModal("Terjadi kesalahan pada server.");
+        });
+    }
+
+    function onScanFailure(error) {
+        // sengaja dikosongkan
+    }
+
+    function startScanner() {
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        if (html5QrCode.isScanning) return;
+
+        Html5Qrcode.getCameras()
+            .then(cameras => {
+                if (!cameras.length) {
+                    showErrorModal("Kamera tidak ditemukan pada perangkat Anda.");
+                    return;
+                }
+
+                availableCameras = cameras;
+
+                // Pick environment / back camera by default
+                let backCamIdx = cameras.findIndex(c => {
+                    const label = (c.label || '').toLowerCase();
+                    return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang');
+                });
+
+                if (backCamIdx !== -1) {
+                    currentCameraIndex = backCamIdx;
+                } else if (cameras.length > 1) {
+                    currentCameraIndex = cameras.length - 1;
+                } else {
+                    currentCameraIndex = 0;
+                }
+
+                startCameraWithConfig();
+            })
+            .catch(() => {
+                startCameraWithFacingMode();
+            });
+    }
+
+    function startCameraWithConfig() {
+        const cameraId = availableCameras[currentCameraIndex].id;
+        const camLabel = availableCameras[currentCameraIndex].label || 'Kamera ' + (currentCameraIndex + 1);
+        const cameraLabelElem = document.getElementById('camera-label-text');
+        if (cameraLabelElem) {
+            cameraLabelElem.textContent = camLabel.length > 18 ? camLabel.substring(0, 15) + '...' : camLabel;
+        }
+
+        html5QrCode.start(
+            cameraId,
+            {
+                fps: 20,
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+                    return { width: Math.floor(minDim * 0.75), height: Math.floor(minDim * 0.75) };
+                }
+            },
+            onScanSuccess,
+            onScanFailure
+        ).catch(err => {
+            startCameraWithFacingMode();
+        });
+    }
+
+    function startCameraWithFacingMode() {
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 20,
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+                    return { width: Math.floor(minDim * 0.75), height: Math.floor(minDim * 0.75) };
+                }
+            },
+            onScanSuccess,
+            onScanFailure
+        ).catch(err => {
+            showErrorModal("Gagal mengakses kamera belakang.");
+        });
+    }
+
+    // Switch Camera Handler
+    document.getElementById('btn-switch-camera')?.addEventListener('click', function() {
+        if (!availableCameras || availableCameras.length < 2) {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    currentCameraIndex = currentCameraIndex === 0 ? 1 : 0;
+                    const mode = currentCameraIndex === 0 ? "environment" : "user";
+                    document.getElementById('camera-label-text').textContent = currentCameraIndex === 0 ? "Kamera Belakang" : "Kamera Depan";
+                    html5QrCode.start({ facingMode: mode }, { fps: 20 }, onScanSuccess, onScanFailure);
+                });
+            }
+            return;
+        }
+
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                startCameraWithConfig();
+            });
+        }
+    });
+
+    // Fullscreen Toggle Handler
+    document.getElementById('btn-fullscreen-toggle')?.addEventListener('click', function() {
+        const wrapper = document.getElementById('reader-wrapper');
+        if (!wrapper) return;
+
+        if (!document.fullscreenElement) {
+            if (wrapper.requestFullscreen) {
+                wrapper.requestFullscreen();
+            } else if (wrapper.webkitRequestFullscreen) {
+                wrapper.webkitRequestFullscreen();
+            }
+            wrapper.classList.add('scanner-fullscreen-active');
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            wrapper.classList.remove('scanner-fullscreen-active');
+        }
+    });
+
+    document.addEventListener('fullscreenchange', function() {
+        const wrapper = document.getElementById('reader-wrapper');
+        if (!document.fullscreenElement && wrapper) {
+            wrapper.classList.remove('scanner-fullscreen-active');
+        }
+    });
+
+    startScanner();
+});
+</script>
+@endpush

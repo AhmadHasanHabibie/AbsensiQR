@@ -628,6 +628,17 @@
 </head>
 <body>
 
+@php
+    $isGlobalTestingActive = \App\Services\AttendanceTimeService::isTestingModeActive();
+@endphp
+
+@if($isGlobalTestingActive)
+<div class="alert alert-warning border-0 rounded-0 shadow-sm text-center py-2.5 px-3 mb-0 sticky-top d-flex align-items-center justify-content-center gap-2" style="z-index: 1045; background: linear-gradient(90deg, #f59e0b, #d97706); color: #ffffff; font-weight: 700; font-size: 14px;">
+    <span class="fs-5">🧪</span>
+    <span><strong>MODE TESTING AKTIF</strong> &mdash; Sistem sedang dalam mode pengujian. Aturan waktu/lock tertentu sedang disimulasikan.</span>
+</div>
+@endif
+
     <!-- ====================== TOAST CONTAINER ====================== -->
     <div id="sa-toast-container"></div>
 
@@ -649,6 +660,52 @@
                 <button type="button" class="sa-modal-btn sa-modal-btn-confirm warning" id="btnLogoutConfirm"
                         onclick="document.getElementById('logoutForm').submit(); saLoadingShow('Sedang logout...')">
                     <span id="logoutBtnText"><i class="bi bi-box-arrow-right me-1"></i> Ya, Logout</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================== TESTING MODE OFF CONFIRMATION MODAL ====================== -->
+    <div class="sa-modal-overlay" id="modalTestingModeOff">
+        <div class="sa-modal-box">
+            <div class="sa-modal-icon-wrap warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="sa-modal-title">Nonaktifkan Testing Mode?</div>
+            <div class="sa-modal-desc">
+                SuperAdmin akan kembali ke mode normal.<br>
+                Sesi testing akan dihentikan.
+            </div>
+            <div class="sa-modal-actions">
+                <button type="button" class="sa-modal-btn sa-modal-btn-cancel" onclick="cancelTestingModeOff()">
+                    <i class="bi bi-x-circle me-1"></i> Batal
+                </button>
+                <button type="button" class="sa-modal-btn sa-modal-btn-confirm warning" onclick="confirmDisableTestingMode()">
+                    <i class="bi bi-power me-1"></i> Nonaktifkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================== TESTING FEATURE INTERCEPT MODAL ====================== -->
+    <div class="sa-modal-overlay" id="modalTestingFeatureNotice">
+        <div class="sa-modal-box" style="max-width: 440px;">
+            <div class="sa-modal-icon-wrap warning" style="background: rgba(245,158,11,0.15); color: #d97706;">
+                <i class="bi bi-bug-fill"></i>
+            </div>
+            <div class="sa-modal-title text-dark fw-bold">🧪 TESTING MODE</div>
+            <div class="sa-modal-desc text-dark text-start mt-2 fs-13">
+                Anda sedang membuka fitur dalam mode pengujian SuperAdmin.<br><br>
+                <div class="p-2.5 rounded-3 bg-light border text-muted small">
+                    <i class="bi bi-shield-check text-success me-1"></i> Mode ini tidak mengubah aturan production pengguna lain.
+                </div>
+            </div>
+            <div class="sa-modal-actions mt-3">
+                <button type="button" class="sa-modal-btn sa-modal-btn-cancel" onclick="cancelTestingFeatureOpen()">
+                    <i class="bi bi-x-circle me-1"></i> Batal
+                </button>
+                <button type="button" class="sa-modal-btn sa-modal-btn-confirm success" onclick="proceedTestingFeatureOpen()">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Lanjutkan
                 </button>
             </div>
         </div>
@@ -719,6 +776,26 @@
                 <i class="bi bi-info-circle"></i>
                 <span>Tentang Aplikasi</span>
             </a>
+
+            <div class="menu-label text-warning d-flex align-items-center gap-1 mt-3">
+                <i class="bi bi-flask text-warning"></i> 🧪 Testing Mode
+            </div>
+            <div class="px-3 py-2.5 my-1 mx-3 rounded-3 border border-warning border-opacity-25 bg-warning bg-opacity-10">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-bug-fill text-warning fs-5"></i>
+                        <div>
+                            <div class="fw-bold text-white fs-13">Testing Mode</div>
+                            <div class="text-warning small" style="font-size: 10px;" id="testingModeSubtext">
+                                {{ $isGlobalTestingActive ? 'STAT: ON' : 'STAT: OFF' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="testingModeToggle" {{ $isGlobalTestingActive ? 'checked' : '' }} onchange="handleTestingToggleChange(this)">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="sidebar-footer">
@@ -745,6 +822,11 @@
                     <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill fw-semibold">
                         <i class="bi bi-shield-check me-1"></i> System Owner Mode
                     </span>
+                    @if(session('superadmin_testing_mode'))
+                        <span class="badge bg-warning text-dark border border-warning px-3 py-2 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-bug-fill"></i> 🧪 TESTING MODE AKTIF
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -934,6 +1016,89 @@
                 saToast(infoEl.textContent.trim(), 'info');
             }
         });
+
+        /* ==================== SUPERADMIN TESTING MODE JS ==================== */
+        let pendingTestingFeatureUrl = null;
+
+        function handleTestingToggleChange(checkbox) {
+            if (!checkbox.checked) {
+                // Revert switch visually first and open confirmation modal
+                checkbox.checked = true;
+                saModalOpen('modalTestingModeOff');
+            } else {
+                sendTestingModeRequest(true);
+            }
+        }
+
+        function cancelTestingModeOff() {
+            saModalClose('modalTestingModeOff');
+            const toggle = document.getElementById('testingModeToggle');
+            if (toggle) toggle.checked = true;
+        }
+
+        function confirmDisableTestingMode() {
+            saModalClose('modalTestingModeOff');
+            sendTestingModeRequest(false);
+        }
+
+        function sendTestingModeRequest(activeState) {
+            saLoadingShow('Mengubah Mode Testing...');
+            fetch("{{ route('superadmin.toggle-testing-mode') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ active: activeState })
+            })
+            .then(res => res.json())
+            .then(data => {
+                saLoadingHide();
+                if (data.success) {
+                    saToast(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                } else {
+                    saToast(data.message || 'Gagal mengubah Mode Testing', 'error');
+                }
+            })
+            .catch(() => {
+                saLoadingHide();
+                saToast('Terjadi kesalahan pada koneksi server.', 'error');
+            });
+        }
+
+        // Intercept testing features navigation when Testing Mode is ON
+        document.addEventListener('DOMContentLoaded', function() {
+            const isTestingActive = {{ \App\Services\AttendanceTimeService::isTestingModeActive() ? 'true' : 'false' }};
+            if (!isTestingActive) return;
+
+            // Intercept navigation for designated testing feature links
+            const testingLinks = document.querySelectorAll('a[href*="attendance-operation"], a[href*="academic-calendar"], a[href*="monitoring"], a[href*="backup"], a[href*="maintenance"], a[href*="config"]');
+
+            testingLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    pendingTestingFeatureUrl = this.getAttribute('href');
+                    saModalOpen('modalTestingFeatureNotice');
+                });
+            });
+        });
+
+        function cancelTestingFeatureOpen() {
+            saModalClose('modalTestingFeatureNotice');
+            pendingTestingFeatureUrl = null;
+        }
+
+        function proceedTestingFeatureOpen() {
+            saModalClose('modalTestingFeatureNotice');
+            if (pendingTestingFeatureUrl) {
+                saLoadingShow('Membuka Fitur Testing...');
+                window.location.href = pendingTestingFeatureUrl;
+            }
+        }
     </script>
 
     @stack('scripts')

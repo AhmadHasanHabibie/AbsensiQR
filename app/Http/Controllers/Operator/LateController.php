@@ -60,7 +60,7 @@ class LateController extends Controller
 
         $isScanOpen = AttendanceTimeService::isAttendanceOpen();
 
-        if ($isScanOpen) {
+        if ($isScanOpen && ! AttendanceTimeService::isTestingModeActive()) {
             return redirect()
                 ->route('operator.terlambat.index')
                 ->with('error', 'Scan QR Absensi sedang berlangsung otomatis (03:00 - 06:30 WIB). Input keterlambatan dapat dilakukan setelah pukul 06:31 WIB.');

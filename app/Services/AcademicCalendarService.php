@@ -31,6 +31,30 @@ class AcademicCalendarService
         $targetDate = $date ? Carbon::parse($date)->toDateString() : Carbon::now('Asia/Jakarta')->toDateString();
         $dt = Carbon::parse($targetDate);
 
+        if (AttendanceTimeService::isTestingModeActive()) {
+            return [
+                'date'                  => $targetDate,
+                'day_name'              => static::getDayNameIndonesian($dt->dayOfWeekIso),
+                'is_school_day'         => true,
+                'is_holiday'            => false,
+                'is_emergency'          => false,
+                'status'                => 'Hari Belajar (Simulasi Testing)',
+                'category'              => 'Mode Testing',
+                'activity'              => 'Mode Testing Aktif — Aturan Waktu & Lock Disimulasikan',
+                'description'           => 'Sistem dalam mode pengujian global oleh SuperAdmin.',
+                'source'                => 'Global Testing Context',
+                'badge_class'           => 'bg-warning text-dark fw-bold',
+                'badge_style'           => 'badge-mpls',
+                'allow_qr_scan'         => true,
+                'allow_confirmation'    => true,
+                'allow_emergency_input' => true,
+                'allow_reminder'        => true,
+                'updated_by'            => 'Super Administrator (Testing Mode)',
+                'updated_at'            => Carbon::now('Asia/Jakarta')->format('d/m/Y H:i'),
+                'reason'                => 'Mode Testing Aktif',
+            ];
+        }
+
         /*
         |--------------------------------------------------------------------------
         | 1. EMERGENCY OVERRIDE (PRIORITAS UTAMA)

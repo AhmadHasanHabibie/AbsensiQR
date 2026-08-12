@@ -218,4 +218,50 @@ class DashboardController extends Controller
             'dailyStatus'
         ));
     }
+
+    /**
+     * Toggle Mode Testing Global khusus SuperAdmin (Persist di Cache & Storage).
+     */
+    public function toggleTestingMode(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Strict Backend Authorization Check
+        if (!$user || !$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur ini hanya untuk Super Administrator.'
+            ], 403);
+        }
+
+        $active = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN);
+
+        // 2. Persist Global Testing Mode in Cache & Storage File (Survives SuperAdmin logout)
+        if ($active) {
+            Cache::forever('global_testing_mode', true);
+            @file_put_contents(storage_path('app/testing_mode.json'), json_encode(['testing_mode' => true, 'updated_at' => now()->toIso8601String()]));
+        } else {
+            Cache::forget('global_testing_mode');
+            Cache::forever('global_testing_mode', false);
+            @file_put_contents(storage_path('app/testing_mode.json'), json_encode(['testing_mode' => false, 'updated_at' => now()->toIso8601String()]));
+        }
+
+        session(['superadmin_testing_mode' => $active]);
+
+        // 3. Log Activity using existing ActivityLog
+        ActivityLog::log(
+            $active ? 'Testing Mode Enabled' : 'Testing Mode Disabled',
+            'Pengaturan Global Mode Testing',
+            "SuperAdmin {$user->name} " . ($active ? 'MENGAKTIFKAN' : 'MENONAKTIFKAN') . ' Global Testing Mode.',
+            $user
+        );
+
+        return response()->json([
+            'success'      => true,
+            'testing_mode' => $active,
+            'message'      => $active
+                ? 'Global Testing Mode DIAKTIFKAN! Status aktif bertahan walaupun SuperAdmin logout.'
+                : 'Global Testing Mode DINONAKTIFKAN. Seluruh sistem kembali ke aturan normal.'
+        ]);
+    }
 }

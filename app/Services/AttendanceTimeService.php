@@ -22,6 +22,22 @@ class AttendanceTimeService
     public const ON_TIME_LIMIT = '06:30:59';
 
     /**
+     * Cek apakah Global Testing Mode sedang diaktifkan oleh SuperAdmin.
+     */
+    public static function isTestingModeActive(): bool
+    {
+        if (\Illuminate\Support\Facades\Cache::has('global_testing_mode')) {
+            return (bool) \Illuminate\Support\Facades\Cache::get('global_testing_mode');
+        }
+        $filePath = storage_path('app/testing_mode.json');
+        if (file_exists($filePath)) {
+            $data = json_decode(@file_get_contents($filePath), true);
+            return !empty($data['testing_mode']);
+        }
+        return false;
+    }
+
+    /**
      * Mengetes apakah QR Attendance sedang DIBUKA berdasarkan waktu Server (Asia/Jakarta)
      * DAN status Kalender Akademik / Emergency Override.
      *
@@ -29,6 +45,11 @@ class AttendanceTimeService
      */
     public static function isAttendanceOpen(): bool
     {
+        // 0. Global Testing Mode Override
+        if (static::isTestingModeActive()) {
+            return true;
+        }
+
         // 1. Cek Kalender Akademik & Emergency Override
         if (! AcademicCalendarService::isSchoolDay()) {
             return false;
@@ -48,6 +69,11 @@ class AttendanceTimeService
      */
     public static function isAttendanceExpired(): bool
     {
+        // 0. Global Testing Mode Override
+        if (static::isTestingModeActive()) {
+            return false;
+        }
+
         if (! AcademicCalendarService::isSchoolDay()) {
             return true;
         }

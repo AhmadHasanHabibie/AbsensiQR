@@ -299,6 +299,13 @@
 
 <body>
 
+@if(\App\Services\AttendanceTimeService::isTestingModeActive())
+<div class="alert alert-warning border-0 rounded-0 shadow-sm text-center py-2.5 px-3 mb-0 sticky-top d-flex align-items-center justify-content-center gap-2" style="z-index: 1045; background: linear-gradient(90deg, #f59e0b, #d97706); color: #ffffff; font-weight: 700; font-size: 14px;">
+    <span class="fs-5">🧪</span>
+    <span><strong>MODE TESTING AKTIF</strong> &mdash; Sistem sedang dalam mode pengujian. Aturan waktu/lock tertentu sedang disimulasikan.</span>
+</div>
+@endif
+
 {{-- TOAST NOTIFICATION CONTAINER --}}
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1095;">
     @if(session('success'))

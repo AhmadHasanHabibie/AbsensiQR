@@ -142,6 +142,7 @@ Route::middleware([
     Route::post('/verify-pin', [SuperAdminPinController::class, 'processVerify'])->name('pin.process');
 
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/toggle-testing-mode', [SuperAdminDashboardController::class, 'toggleTestingMode'])->name('toggle-testing-mode');
     Route::get('/monitoring', [SuperAdminMonitoringController::class, 'index'])->name('monitoring.index');
     Route::get('/server-info', [SuperAdminServerInfoController::class, 'index'])->name('server-info.index');
 
