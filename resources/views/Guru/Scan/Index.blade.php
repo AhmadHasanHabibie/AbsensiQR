@@ -152,6 +152,20 @@
                             </div>
 
                             <div id="reader" style="width:100%;"></div>
+
+                            {{-- Fullscreen Toast Pop-up Overlay (Khusus Mode Layar Penuh) --}}
+                            <div id="fullscreen-toast-overlay" class="position-absolute bottom-0 start-0 end-0 p-3 p-md-4 d-none" style="z-index: 999; pointer-events: none;">
+                                <div id="fullscreen-toast-card" class="card border-0 shadow-lg rounded-4 overflow-hidden mx-auto" style="max-width: 480px; pointer-events: auto; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2) !important;">
+                                    <div id="fullscreen-toast-header" class="px-3 py-2 text-white fw-bold d-flex align-items-center justify-content-between bg-success bg-gradient">
+                                        <span id="fullscreen-toast-title" class="d-flex align-items-center gap-2 small text-uppercase font-monospace">
+                                            <i class="bi bi-check-circle-fill fs-6"></i> <span id="fullscreen-toast-title-text">ABSENSI BERHASIL</span>
+                                        </span>
+                                        <button type="button" class="btn-close btn-close-white btn-sm" onclick="hideFullscreenToast()"></button>
+                                    </div>
+                                    <div class="card-body p-3 text-white" id="fullscreen-toast-body">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Instruksi Di Bawah Kamera --}}
@@ -350,9 +364,91 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     setInterval(updateClock, 1000);
 
+    let fullscreenToastTimeout = null;
+
+    function isScannerFullscreen() {
+        const wrapper = document.getElementById('reader-wrapper');
+        return !!(document.fullscreenElement || (wrapper && wrapper.classList.contains('scanner-fullscreen-active')));
+    }
+
+    window.hideFullscreenToast = function() {
+        const overlay = document.getElementById('fullscreen-toast-overlay');
+        if (overlay) {
+            overlay.classList.add('d-none');
+        }
+    };
+
+    function showFullscreenToast(type, data) {
+        const overlay = document.getElementById('fullscreen-toast-overlay');
+        const header = document.getElementById('fullscreen-toast-header');
+        const titleText = document.getElementById('fullscreen-toast-title-text');
+        const body = document.getElementById('fullscreen-toast-body');
+
+        if (!overlay || !body) return;
+
+        if (type === 'success') {
+            if (header) header.className = 'px-3 py-2 text-white fw-bold d-flex align-items-center justify-content-between bg-success bg-gradient';
+            if (titleText) titleText.textContent = 'ABSENSI BERHASIL!';
+
+            const studentName = data.student?.name || 'Siswa';
+            const studentNis = data.student?.nis || '-';
+            const studentClass = data.student?.class || '-';
+            const checkTime = data.time ? `${data.time} WIB` : '';
+
+            body.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-25 text-success rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:48px; height:48px; flex-shrink:0;">
+                        <i class="bi bi-check-lg fs-2"></i>
+                    </div>
+                    <div class="flex-grow-1 text-start">
+                        <h5 class="fw-bold mb-1 text-white">${studentName}</h5>
+                        <div class="d-flex flex-wrap align-items-center gap-2 small text-light opacity-90">
+                            <span><i class="bi bi-card-text me-1 text-info"></i>NIS: <strong>${studentNis}</strong></span>
+                            <span>|</span>
+                            <span><i class="bi bi-building me-1 text-warning"></i>Kelas: <strong>${studentClass}</strong></span>
+                        </div>
+                        ${checkTime ? `<div class="mt-1.5"><span class="badge bg-success font-monospace px-2.5 py-1 fs-7"><i class="bi bi-clock-fill me-1"></i>${checkTime}</span></div>` : ''}
+                    </div>
+                </div>
+            `;
+        } else {
+            if (header) header.className = 'px-3 py-2 text-white fw-bold d-flex align-items-center justify-content-between bg-danger bg-gradient';
+            if (titleText) titleText.textContent = 'SCAN GAGAL!';
+
+            const errorMsg = typeof data === 'string' ? data : (data.message || 'Proses scan gagal.');
+            const studentName = data.student?.name;
+            const studentNis = data.student?.nis;
+
+            body.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-25 text-danger rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:44px; height:44px; flex-shrink:0;">
+                        <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 text-start">
+                        <h6 class="fw-bold mb-1 text-white">${errorMsg}</h6>
+                        ${studentName ? `<small class="text-light opacity-75">${studentName} (NIS: ${studentNis || '-'})</small>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        overlay.classList.remove('d-none');
+
+        if (fullscreenToastTimeout) clearTimeout(fullscreenToastTimeout);
+        fullscreenToastTimeout = setTimeout(() => {
+            hideFullscreenToast();
+        }, 2200);
+    }
+
     // Centered Result Modal Popup Handler
     function showSuccessModal(data) {
         playAudioBeep('success');
+        showSuccess(data);
+
+        if (isScannerFullscreen()) {
+            showFullscreenToast('success', data);
+            return;
+        }
 
         const headerBg = document.getElementById('modal-header-bg');
         const iconContainer = document.getElementById('modal-icon-container');
@@ -384,15 +480,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modalTimeout) clearTimeout(modalTimeout);
         modalInstance.show();
 
-        showSuccess(data);
-
         modalTimeout = setTimeout(() => {
             modalInstance.hide();
-        }, 2500);
+        }, 2000);
     }
 
-    function showErrorModal(message) {
+    function showErrorModal(message, data = null) {
         playAudioBeep('error');
+        showError(message);
+
+        if (isScannerFullscreen()) {
+            showFullscreenToast('error', data || message);
+            return;
+        }
 
         const headerBg = document.getElementById('modal-header-bg');
         const iconContainer = document.getElementById('modal-icon-container');
@@ -422,11 +522,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modalTimeout) clearTimeout(modalTimeout);
         modalInstance.show();
 
-        showError(message);
-
         modalTimeout = setTimeout(() => {
             modalInstance.hide();
-        }, 3000);
+        }, 2500);
     }
 
     document.getElementById('scanResultModal')?.addEventListener('hidden.bs.modal', function () {
@@ -455,9 +553,25 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
+    let lastScannedQr = null;
+    let lastScanTime = 0;
+
     function onScanSuccess(decodedText) {
-        if (processing) return;
+        const now = Date.now();
+
+        // Cegah scan berulang untuk QR token SAMA dalam kurun waktu 2.5 detik
+        if (decodedText === lastScannedQr && (now - lastScanTime) < 2500) {
+            return;
+        }
+
+        // Cegah request bersamaan secara berlebihan
+        if (processing && (now - lastScanTime) < 500) {
+            return;
+        }
+
         processing = true;
+        lastScannedQr = decodedText;
+        lastScanTime = now;
 
         fetch("{{ route('guru.scan.store') }}", {
             method: "POST",
@@ -475,11 +589,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 showSuccessModal(data);
             } else {
-                showErrorModal(data.message);
+                showErrorModal(data.message, data);
             }
         })
         .catch(() => {
             showErrorModal("Terjadi kesalahan pada server.");
+        })
+        .finally(() => {
+            // Lepas lock 'processing' setelah 600ms agar QR siswa berikutnya dapat langsung di-scan tanpa jeda lama!
+            setTimeout(() => {
+                processing = false;
+            }, 600);
         });
     }
 
@@ -535,10 +655,9 @@ document.addEventListener('DOMContentLoaded', function () {
         html5QrCode.start(
             cameraId,
             {
-                fps: 20,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-                    return { width: Math.floor(minDim * 0.75), height: Math.floor(minDim * 0.75) };
+                fps: 30,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
                 }
             },
             onScanSuccess,
@@ -552,10 +671,9 @@ document.addEventListener('DOMContentLoaded', function () {
         html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 20,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-                    return { width: Math.floor(minDim * 0.75), height: Math.floor(minDim * 0.75) };
+                fps: 30,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
                 }
             },
             onScanSuccess,
@@ -573,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentCameraIndex = currentCameraIndex === 0 ? 1 : 0;
                     const mode = currentCameraIndex === 0 ? "environment" : "user";
                     document.getElementById('camera-label-text').textContent = currentCameraIndex === 0 ? "Kamera Belakang" : "Kamera Depan";
-                    html5QrCode.start({ facingMode: mode }, { fps: 20 }, onScanSuccess, onScanFailure);
+                    html5QrCode.start({ facingMode: mode }, { fps: 30, experimentalFeatures: { useBarCodeDetectorIfSupported: true } }, onScanSuccess, onScanFailure);
                 });
             }
             return;
