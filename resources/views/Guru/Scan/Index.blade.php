@@ -267,7 +267,7 @@
         height: 100% !important;
         max-width: 100% !important;
         max-height: 100% !important;
-        object-fit: cover !important;
+        object-fit: contain !important;
         object-position: center center !important;
         margin-left: auto !important;
         margin-right: auto !important;
