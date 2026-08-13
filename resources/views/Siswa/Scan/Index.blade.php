@@ -210,7 +210,7 @@
         height: 100% !important;
         max-width: 100% !important;
         max-height: 100% !important;
-        object-fit: contain !important;
+        object-fit: cover !important;
         object-position: center center !important;
         margin-left: auto !important;
         margin-right: auto !important;
@@ -218,19 +218,14 @@
     }
 
     .scanner-box-frame {
-        width: 240px;
-        height: 240px;
-        border: 2.5px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+        width: 250px;
+        height: 250px;
+        border: 3px solid rgba(34, 197, 94, 0.85);
+        box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.55);
         border-radius: 20px;
         position: relative;
         overflow: hidden;
-    }
-    @media (min-width: 576px) {
-        .scanner-box-frame {
-            width: 280px;
-            height: 280px;
-        }
+        transition: width 0.15s ease-out, height 0.15s ease-out;
     }
 
     .scanner-line {
@@ -535,6 +530,51 @@ document.addEventListener('DOMContentLoaded', function () {
         // sengaja dikosongkan
     }
 
+    function updateVisualFrame(boxSize) {
+        const frame = document.querySelector('.scanner-box-frame');
+        if (frame && boxSize) {
+            frame.style.width = boxSize + 'px';
+            frame.style.height = boxSize + 'px';
+        }
+    }
+
+    function createScannerConfig() {
+        return {
+            fps: 25,
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
+                updateVisualFrame(boxSize);
+                return {
+                    width: boxSize,
+                    height: boxSize
+                };
+            },
+            videoConstraints: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280, min: 640 },
+                height: { ideal: 720, min: 480 }
+            }
+        };
+    }
+
+    let resizeDebounceTimeout = null;
+    function syncScannerLayout() {
+        if (resizeDebounceTimeout) clearTimeout(resizeDebounceTimeout);
+        resizeDebounceTimeout = setTimeout(() => {
+            const wrapper = document.getElementById('reader-wrapper');
+            if (wrapper) {
+                const w = wrapper.clientWidth;
+                const h = wrapper.clientHeight;
+                if (w > 0 && h > 0) {
+                    const minEdge = Math.min(w, h);
+                    const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
+                    updateVisualFrame(boxSize);
+                }
+            }
+        }, 150);
+    }
+
     function startScanner() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -580,19 +620,11 @@ document.addEventListener('DOMContentLoaded', function () {
             cameraLabelElem.textContent = camLabel.length > 18 ? camLabel.substring(0, 15) + '...' : camLabel;
         }
 
+        const config = createScannerConfig();
+
         html5QrCode.start(
             cameraId,
-            {
-                fps: 25,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                    const boxSize = Math.floor(minEdge * 0.75);
-                    return {
-                        width: Math.max(200, Math.min(boxSize, 360)),
-                        height: Math.max(200, Math.min(boxSize, 360))
-                    };
-                }
-            },
+            config,
             onScanSuccess,
             onScanFailure
         ).catch(err => {
@@ -601,23 +633,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function startCameraWithFacingMode() {
+        const config = createScannerConfig();
+        const mode = (currentCameraIndex === 1) ? "user" : "environment";
+
         html5QrCode.start(
-            { facingMode: "environment" },
-            {
-                fps: 25,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                    const boxSize = Math.floor(minEdge * 0.75);
-                    return {
-                        width: Math.max(200, Math.min(boxSize, 360)),
-                        height: Math.max(200, Math.min(boxSize, 360))
-                    };
-                }
-            },
+            { facingMode: { ideal: mode } },
+            config,
             onScanSuccess,
             onScanFailure
         ).catch(err => {
-            showErrorModal("Gagal mengakses kamera belakang.");
+            html5QrCode.start(
+                { facingMode: mode },
+                {
+                    fps: 25,
+                    qrbox: function(vw, vh) {
+                        const minEdge = Math.min(vw, vh);
+                        const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
+                        updateVisualFrame(boxSize);
+                        return { width: boxSize, height: boxSize };
+                    }
+                },
+                onScanSuccess,
+                onScanFailure
+            ).catch(e => {
+                showErrorModal("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.");
+            });
         });
     }
 
@@ -627,24 +667,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (html5QrCode && html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
                     currentCameraIndex = currentCameraIndex === 0 ? 1 : 0;
-                    const mode = currentCameraIndex === 0 ? "environment" : "user";
                     document.getElementById('camera-label-text').textContent = currentCameraIndex === 0 ? "Kamera Belakang" : "Kamera Depan";
-                    html5QrCode.start(
-                        { facingMode: mode },
-                        {
-                            fps: 25,
-                            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                                const boxSize = Math.floor(minEdge * 0.75);
-                                return {
-                                    width: Math.max(200, Math.min(boxSize, 360)),
-                                    height: Math.max(200, Math.min(boxSize, 360))
-                                };
-                            }
-                        },
-                        onScanSuccess,
-                        onScanFailure
-                    );
+                    startCameraWithFacingMode();
                 });
             }
             return;
@@ -676,6 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             wrapper.classList.remove('scanner-fullscreen-active');
         }
+        syncScannerLayout();
     });
 
     document.addEventListener('fullscreenchange', function() {
@@ -683,7 +708,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!document.fullscreenElement && wrapper) {
             wrapper.classList.remove('scanner-fullscreen-active');
         }
+        syncScannerLayout();
     });
+
+    window.addEventListener('resize', syncScannerLayout);
+    window.addEventListener('orientationchange', syncScannerLayout);
 
     startScanner();
 });
