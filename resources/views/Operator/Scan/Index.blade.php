@@ -367,7 +367,7 @@
         height: 100% !important;
         max-width: 100% !important;
         max-height: 100% !important;
-        object-fit: contain !important;
+        object-fit: cover !important;
         object-position: center center !important;
         margin-left: auto !important;
         margin-right: auto !important;
@@ -418,10 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isScanActive = {{ $isScanOpen ? 'true' : 'false' }};
     let processing = false;
     let availableCameras = [];
-    let backCameraId = null;
-    let frontCameraId = null;
-    let isFrontCamera = false;
-    let isSwitchingCamera = false;
+    let currentCameraIndex = 0;
     let modalInstance = null;
     let modalTimeout = null;
 
@@ -547,123 +544,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setInterval(checkSystemTime, 1000);
 
-    function updateVisualFrame(boxSize) {
-        const frame = document.querySelector('.scanner-box-frame');
-        if (frame && boxSize) {
-            frame.style.width = boxSize + 'px';
-            frame.style.height = boxSize + 'px';
-        }
-    }
-
-    function createScannerConfig() {
-        return {
-            fps: 30,
-            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
-                updateVisualFrame(boxSize);
-                return {
-                    width: boxSize,
-                    height: boxSize
-                };
-            },
-            videoConstraints: {
-                width: { ideal: 1280, min: 640 },
-                height: { ideal: 720, min: 480 }
-            },
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
-        };
-    }
-
-    function detectCameraIds(cameras) {
-        if (!cameras || !cameras.length) return;
-
-        backCameraId = null;
-        frontCameraId = null;
-
-        const backCam = cameras.find(c => {
-            const label = (c.label || '').toLowerCase();
-            return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang');
-        });
-
-        const frontCam = cameras.find(c => {
-            const label = (c.label || '').toLowerCase();
-            return label.includes('front') || label.includes('user') || label.includes('depan') || label.includes('selfie');
-        });
-
-        if (backCam && backCam.id) {
-            backCameraId = backCam.id;
-        }
-
-        if (frontCam && frontCam.id) {
-            frontCameraId = frontCam.id;
-        }
-
-        console.log("BACK CAMERA ID:", backCameraId);
-        console.log("FRONT CAMERA ID:", frontCameraId);
-    }
-
-    function getCameraConstraintForTarget(targetIsFront) {
-        const targetModeStr = targetIsFront ? "FRONT" : "BACK";
-        const currentModeStr = isFrontCamera ? "FRONT" : "BACK";
-        console.log("CURRENT CAMERA:", currentModeStr);
-        console.log("TARGET CAMERA:", targetModeStr);
-
-        const mode = targetIsFront ? "user" : "environment";
-
-        if (targetIsFront && frontCameraId) {
-            return frontCameraId;
-        } else if (!targetIsFront && backCameraId) {
-            return backCameraId;
-        }
-
-        return { facingMode: { ideal: mode } };
-    }
-
-    function startCameraWithTarget(targetIsFront) {
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-
-        if (html5QrCode.isScanning) {
-            return Promise.resolve();
-        }
-
-        const cameraChoice = getCameraConstraintForTarget(targetIsFront);
-        const config = createScannerConfig();
-
-        return html5QrCode.start(
-            cameraChoice,
-            config,
-            onScanSuccess,
-            onScanFailure
-        ).then(() => {
-            isFrontCamera = targetIsFront;
-            const cameraLabelElem = document.getElementById('camera-label-text');
-            if (cameraLabelElem) {
-                cameraLabelElem.textContent = isFrontCamera ? "Kamera Depan" : "Kamera Belakang";
-            }
-        }).catch(err => {
-            const fallbackMode = targetIsFront ? "user" : "environment";
-            return html5QrCode.start(
-                { facingMode: fallbackMode },
-                config,
-                onScanSuccess,
-                onScanFailure
-            ).then(() => {
-                isFrontCamera = targetIsFront;
-                const cameraLabelElem = document.getElementById('camera-label-text');
-                if (cameraLabelElem) {
-                    cameraLabelElem.textContent = isFrontCamera ? "Kamera Depan" : "Kamera Belakang";
-                }
-            }).catch(e => {
-                showErrorModal("Gagal mengakses " + (targetIsFront ? "kamera depan" : "kamera belakang") + ".");
-            });
-        });
-    }
-
+    // Initialize HTML5 Scanner with Back Camera Default & Camera Switcher
     function startScanner() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -673,48 +554,101 @@ document.addEventListener('DOMContentLoaded', function () {
 
         Html5Qrcode.getCameras()
             .then(cameras => {
-                if (cameras && cameras.length) {
-                    availableCameras = cameras;
-                    detectCameraIds(cameras);
+                if (!cameras.length) {
+                    showErrorModal("Kamera tidak ditemukan pada perangkat Anda.");
+                    return;
                 }
-                startCameraWithTarget(isFrontCamera);
+
+                availableCameras = cameras;
+
+                // Pick environment / back camera by default
+                let backCamIdx = cameras.findIndex(c => {
+                    const label = (c.label || '').toLowerCase();
+                    return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang');
+                });
+
+                if (backCamIdx !== -1) {
+                    currentCameraIndex = backCamIdx;
+                } else if (cameras.length > 1) {
+                    currentCameraIndex = cameras.length - 1; // back camera is usually last on mobile
+                } else {
+                    currentCameraIndex = 0;
+                }
+
+                startCameraWithConfig();
             })
             .catch(() => {
-                startCameraWithTarget(isFrontCamera);
+                // Fallback to facingMode environment
+                startCameraWithFacingMode();
             });
+    }
+
+    function startCameraWithConfig() {
+        const cameraId = availableCameras[currentCameraIndex].id;
+        const camLabel = availableCameras[currentCameraIndex].label || 'Kamera ' + (currentCameraIndex + 1);
+        const cameraLabelElem = document.getElementById('camera-label-text');
+        if (cameraLabelElem) {
+            cameraLabelElem.textContent = camLabel.length > 18 ? camLabel.substring(0, 15) + '...' : camLabel;
+        }
+
+        html5QrCode.start(
+            cameraId,
+            {
+                fps: 30,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            },
+            onScanSuccess,
+            onScanFailure
+        ).catch(err => {
+            // Fallback facingMode if camera ID fail
+            startCameraWithFacingMode();
+        });
+    }
+
+    function startCameraWithFacingMode() {
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 30,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            },
+            onScanSuccess,
+            onScanFailure
+        ).catch(err => {
+            showErrorModal("Gagal mengakses kamera belakang.");
+        });
     }
 
     function stopScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
-            return html5QrCode.stop().catch(() => {});
+            html5QrCode.stop().catch(() => {});
         }
-        return Promise.resolve();
     }
 
     // Switch Camera Handler
     document.getElementById('btn-switch-camera')?.addEventListener('click', function() {
-        if (isSwitchingCamera) return;
-
-        if (availableCameras && availableCameras.length === 1) {
-            showErrorModal("Kamera lain tidak tersedia pada perangkat Anda.");
+        if (!availableCameras || availableCameras.length < 2) {
+            // If API didn't list cameras, toggle facingMode
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    currentCameraIndex = currentCameraIndex === 0 ? 1 : 0;
+                    const mode = currentCameraIndex === 0 ? "environment" : "user";
+                    document.getElementById('camera-label-text').textContent = currentCameraIndex === 0 ? "Kamera Belakang" : "Kamera Depan";
+                    html5QrCode.start({ facingMode: mode }, { fps: 30, experimentalFeatures: { useBarCodeDetectorIfSupported: true } }, onScanSuccess, onScanFailure);
+                });
+            }
             return;
         }
 
-        isSwitchingCamera = true;
-        const targetIsFront = !isFrontCamera;
-
-        const doSwitch = () => {
-            startCameraWithTarget(targetIsFront).finally(() => {
-                isSwitchingCamera = false;
-            });
-        };
-
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(doSwitch).catch(() => {
-                doSwitch();
+            html5QrCode.stop().then(() => {
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                startCameraWithConfig();
             });
-        } else {
-            doSwitch();
         }
     });
 
