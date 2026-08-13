@@ -583,9 +583,14 @@ document.addEventListener('DOMContentLoaded', function () {
         html5QrCode.start(
             cameraId,
             {
-                fps: 30,
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
+                fps: 25,
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const boxSize = Math.floor(minEdge * 0.75);
+                    return {
+                        width: Math.max(200, Math.min(boxSize, 360)),
+                        height: Math.max(200, Math.min(boxSize, 360))
+                    };
                 }
             },
             onScanSuccess,
@@ -599,9 +604,14 @@ document.addEventListener('DOMContentLoaded', function () {
         html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 30,
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
+                fps: 25,
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const boxSize = Math.floor(minEdge * 0.75);
+                    return {
+                        width: Math.max(200, Math.min(boxSize, 360)),
+                        height: Math.max(200, Math.min(boxSize, 360))
+                    };
                 }
             },
             onScanSuccess,
@@ -619,7 +629,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentCameraIndex = currentCameraIndex === 0 ? 1 : 0;
                     const mode = currentCameraIndex === 0 ? "environment" : "user";
                     document.getElementById('camera-label-text').textContent = currentCameraIndex === 0 ? "Kamera Belakang" : "Kamera Depan";
-                    html5QrCode.start({ facingMode: mode }, { fps: 30, experimentalFeatures: { useBarCodeDetectorIfSupported: true } }, onScanSuccess, onScanFailure);
+                    html5QrCode.start(
+                        { facingMode: mode },
+                        {
+                            fps: 25,
+                            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                                const boxSize = Math.floor(minEdge * 0.75);
+                                return {
+                                    width: Math.max(200, Math.min(boxSize, 360)),
+                                    height: Math.max(200, Math.min(boxSize, 360))
+                                };
+                            }
+                        },
+                        onScanSuccess,
+                        onScanFailure
+                    );
                 });
             }
             return;
