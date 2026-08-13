@@ -412,9 +412,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let html5QrCode = null;
     let isScanActive = {{ $isScanOpen ? 'true' : 'false' }};
     let processing = false;
-    let currentMode = 'back';
-    let backCameraId = null;
-    let frontCameraId = null;
+    let isFrontCamera = false;
     let isSwitchingCamera = false;
     let modalInstance = null;
     let modalTimeout = null;
@@ -552,84 +550,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function createScannerConfig() {
         return {
             fps: 25,
-            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
-                updateVisualFrame(boxSize);
-                return {
-                    width: boxSize,
-                    height: boxSize
-                };
-            },
             videoConstraints: {
                 width: { ideal: 1280, min: 640 },
                 height: { ideal: 720, min: 480 }
             }
         };
-    }
-
-    let resizeDebounceTimeout = null;
-    function syncScannerLayout() {
-        if (resizeDebounceTimeout) clearTimeout(resizeDebounceTimeout);
-        resizeDebounceTimeout = setTimeout(() => {
-            const wrapper = document.getElementById('reader-wrapper');
-            if (wrapper) {
-                const w = wrapper.clientWidth;
-                const h = wrapper.clientHeight;
-                if (w > 0 && h > 0) {
-                    const minEdge = Math.min(w, h);
-                    const boxSize = Math.max(220, Math.min(Math.floor(minEdge * 0.65), 550));
-                    updateVisualFrame(boxSize);
-                }
-            }
-        }, 150);
-    }
-
-    function detectCameraIds(cameras) {
-        if (!cameras || !cameras.length) return;
-
-        if (cameras.length === 1) {
-            backCameraId = cameras[0].id;
-            frontCameraId = cameras[0].id;
-            return;
-        }
-
-        let backCam = cameras.find(c => {
-            const label = (c.label || '').toLowerCase();
-            return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang') || label.includes('facing back');
-        });
-
-        let frontCam = cameras.find(c => {
-            const label = (c.label || '').toLowerCase();
-            return label.includes('front') || label.includes('user') || label.includes('depan') || label.includes('selfie') || label.includes('facing front');
-        });
-
-        if (backCam && frontCam && backCam.id !== frontCam.id) {
-            backCameraId = backCam.id;
-            frontCameraId = frontCam.id;
-        } else if (backCam && !frontCam) {
-            backCameraId = backCam.id;
-            const other = cameras.find(c => c.id !== backCam.id);
-            frontCameraId = other ? other.id : backCam.id;
-        } else if (!backCam && frontCam) {
-            frontCameraId = frontCam.id;
-            const other = cameras.find(c => c.id !== frontCam.id);
-            backCameraId = other ? other.id : frontCam.id;
-        } else {
-            backCameraId = cameras[cameras.length - 1].id;
-            frontCameraId = cameras[0].id;
-            if (backCameraId === frontCameraId && cameras.length > 1) {
-                frontCameraId = cameras[1].id;
-            }
-        }
-    }
-
-    function getTargetCameraConstraint() {
-        if (currentMode === 'front') {
-            return frontCameraId ? frontCameraId : { facingMode: "user" };
-        } else {
-            return backCameraId ? backCameraId : { facingMode: "environment" };
-        }
     }
 
     function startCameraForCurrentMode() {
@@ -641,29 +566,29 @@ document.addEventListener('DOMContentLoaded', function () {
             return Promise.resolve();
         }
 
-        const cameraChoice = getTargetCameraConstraint();
+        const mode = isFrontCamera ? "user" : "environment";
         const config = createScannerConfig();
 
         const cameraLabelElem = document.getElementById('camera-label-text');
         if (cameraLabelElem) {
-            cameraLabelElem.textContent = (currentMode === 'front') ? "Kamera Depan" : "Kamera Belakang";
+            cameraLabelElem.textContent = isFrontCamera ? "Kamera Depan" : "Kamera Belakang";
         }
 
         return html5QrCode.start(
-            cameraChoice,
+            { facingMode: mode },
             config,
             onScanSuccess,
             onScanFailure
         ).catch(err => {
-            const fallbackMode = (currentMode === 'front') ? "user" : "environment";
+            console.warn("FacingMode constraint attempt failed, trying exact facingMode:", err);
             return html5QrCode.start(
-                { facingMode: fallbackMode },
+                { facingMode: { exact: mode } },
                 config,
                 onScanSuccess,
                 onScanFailure
             ).catch(e => {
-                showErrorModal("Gagal mengakses " + (currentMode === 'front' ? "kamera depan" : "kamera belakang") + ".");
-                currentMode = (currentMode === 'front') ? 'back' : 'front';
+                showErrorModal("Gagal mengakses " + (isFrontCamera ? "kamera depan" : "kamera belakang") + ".");
+                isFrontCamera = !isFrontCamera;
             });
         });
     }
@@ -675,16 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (html5QrCode.isScanning) return;
 
-        Html5Qrcode.getCameras()
-            .then(cameras => {
-                if (cameras && cameras.length) {
-                    detectCameraIds(cameras);
-                }
-                startCameraForCurrentMode();
-            })
-            .catch(() => {
-                startCameraForCurrentMode();
-            });
+        startCameraForCurrentMode();
     }
 
     function stopScanner() {
@@ -698,20 +614,12 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btn-switch-camera')?.addEventListener('click', function() {
         if (isSwitchingCamera) return;
 
-        const targetMode = (currentMode === 'back') ? 'front' : 'back';
-
-        if (backCameraId && frontCameraId && backCameraId === frontCameraId) {
-            showErrorModal("Kamera depan/belakang tidak tersedia pada perangkat ini.");
-            return;
-        }
-
         isSwitchingCamera = true;
-        currentMode = targetMode;
+        isFrontCamera = !isFrontCamera;
 
         const doSwitch = () => {
             startCameraForCurrentMode().finally(() => {
                 isSwitchingCamera = false;
-                syncScannerLayout();
             });
         };
 
@@ -742,7 +650,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             wrapper.classList.remove('scanner-fullscreen-active');
         }
-        syncScannerLayout();
     });
 
     document.addEventListener('fullscreenchange', function() {
@@ -750,7 +657,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!document.fullscreenElement && wrapper) {
             wrapper.classList.remove('scanner-fullscreen-active');
         }
-        syncScannerLayout();
     });
 
     window.addEventListener('resize', syncScannerLayout);
